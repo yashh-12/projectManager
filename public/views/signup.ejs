@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/index.css" />
+  </head>
+  <body>
+    <div class="formDiv">
+      <div class="innerDiv">
+        <p class="formTitle">Signup</p>
+        <form action="signup" method="post" class="form">
+          <input
+            type="text"
+            name="name"
+            placeholder="Enter your name"
+            required
+          />
+          <input
+            type="email"
+            name="email"
+            id="email"
+            placeholder="Enter your email"
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Enter your password"
+            required
+          />
+          <div class="selectRole">
+            <select name="role">
+                <option value="user" selected>User</option>
+                <option value="admin">Admin</option>
+              </select>
+          </div>
+          
+          <input type="submit" value="Sign Up" />
+        </form>
+        <p ><a href="login" class="link">Login?</a></p>
+      </div>
+    </div>
+  </body>
+</html>
