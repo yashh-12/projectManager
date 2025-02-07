@@ -14,19 +14,22 @@ const userSchema = mongoose.Schema(
     email: {
       type: String,
       required: true,
+      trim: true,
       unique: true,
       match: /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+    },
+    username: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true
     },
     password: {
       type: String,
       required: true,
+      trim: true,
       minlength: 8,
       select: false,
-    },
-    role: {
-      type: String,
-      enum: ["user", "admin"],
-      default: "user",
     },
     refreshToken: {
       type: String,
@@ -49,7 +52,7 @@ userSchema.methods.isCorrectPassword = async function (password) {
 };
 
 userSchema.methods.generateAccessToken = async function () {
-  const token = await jwt.sign(
+  const token = jwt.sign(
     {
       id: this._id,
       email: this.email,
@@ -62,7 +65,7 @@ userSchema.methods.generateAccessToken = async function () {
 };
 
 userSchema.methods.generateRefreshToken = async function () {
-  const token = await jwt.sign(
+  const token = jwt.sign(
     {
       id: this._id,
     },
