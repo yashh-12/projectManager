@@ -1,8 +1,3 @@
-// _id string pk
-// name string
-// owner string
-// projects string[]
-
 import mongoose, {Schema} from "mongoose"
 
 const organizationSchema = new Schema(
