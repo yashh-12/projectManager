@@ -1,17 +1,20 @@
-import mongoose, {Schema} from "mongoose"
+import mongoose, { Schema } from "mongoose"
 
-const teamSchema= new Schema(
+const teamSchema = new Schema(
     {
         name: {
             type: String,
             trim: true,
             required: true
         },
-        tasks: {
-            type: Schema.Types.ObjectId,
-            ref: "Task"
-        }
-    }
+        tasks: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Task"
+            }
+        ]
+    },
+    { timestamps: true }
 )
 
 const Team = mongoose.model("Team", teamSchema)

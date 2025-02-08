@@ -1,4 +1,4 @@
-import mongoose, {Schema} from "mongoose"
+import mongoose, { Schema } from "mongoose"
 
 const projectSchema = new Schema(
     {
@@ -29,7 +29,8 @@ const projectSchema = new Schema(
                 type: Object
             }
         ]
-    }
+    },
+    { timestamps: true }
 )
 
 const Project = mongoose.model("Project", projectSchema)

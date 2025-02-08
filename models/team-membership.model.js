@@ -1,16 +1,17 @@
-import mongoose,{Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const membershipSchema = new Schema(
     {
-        member:{
+        member: {
             type: Schema.Types.ObjectId,
-            refs:"User"
+            refs: "User"
         },
-        teamID:{
-            type:Schema.Types.ObjectId,
+        teamID: {
+            type: Schema.Types.ObjectId,
             refs: "Team"
         }
-    }
+    },
+    { timestamps: true }
 )
 
 const TeamMembership = mongoose.model("TeamMembership", membershipSchema)
