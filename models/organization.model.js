@@ -1,4 +1,4 @@
-import mongoose, {Schema} from "mongoose"
+import mongoose, { Schema } from "mongoose"
 
 const organizationSchema = new Schema(
     {
@@ -18,7 +18,7 @@ const organizationSchema = new Schema(
             }
         ]
     },
-    {timestamp: true}
+    { timestamp: true }
 )
 
 const Organization = mongoose.model("Organization", organizationSchema)

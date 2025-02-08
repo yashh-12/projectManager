@@ -1,4 +1,4 @@
-import mongoose, {Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const taskSchema = new Schema(
     {
@@ -16,9 +16,10 @@ const taskSchema = new Schema(
             type: String,
             trim: true
         }
-    }
+    },
+    { timestamps: true }
 )
 
-const Task=mongoose.model("Task", taskSchema)
+const Task = mongoose.model("Task", taskSchema)
 
 export default Task
