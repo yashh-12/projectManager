@@ -4,12 +4,21 @@ import jwt from "jsonwebtoken";
 
 const userSchema = mongoose.Schema(
   {
+    isVerified: {
+      type: Boolean,
+      default: false
+    },
     name: {
       type: String,
       required: true,
       trim: true,
       minlength: 3,
       maxlength: 50,
+    },
+    organization: {
+      type: String,
+      trim: true,
+      default: ""
     },
     email: {
       type: String,
@@ -30,6 +39,10 @@ const userSchema = mongoose.Schema(
       trim: true,
       minlength: 8,
       select: false,
+    },
+    userPrefs: {
+      type: Schema.Types.ObjectId,
+      refs: "Preference"
     },
     refreshToken: {
       type: String,
