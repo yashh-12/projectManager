@@ -16,9 +16,8 @@ const userSchema = mongoose.Schema(
       maxlength: 50,
     },
     organization: {
-      type: String,
-      trim: true,
-      default: ""
+      type: Schema.Types.ObjectId,
+      refs: "Organization"
     },
     email: {
       type: String,
