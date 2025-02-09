@@ -1,4 +1,5 @@
-class apiError {
+
+class apiError{
     constructor(statusCode, message) {
         this.message = message;
         this.statusCode = statusCode;

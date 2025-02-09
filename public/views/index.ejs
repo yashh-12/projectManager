@@ -1,15 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="/css/index.css">
-</head>
-<body>
-    <div class="mainDiv">
-        <p>This is DashBoard</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Management</title>
+    <link rel="stylesheet" href="css/index.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header>
+      <h1>Project Management</h1>
+      <div class="auth-links">
+        <a href="/api/auth/login" class="btn">Login</a>
+        <a href="/api/auth/signup" class="btn btn-signup">Sign Up</a>
+        
+      </div>
+    </header>
 
-    </div>
-</body>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-content">
+        <h2>Manage Your Projects Efficiently</h2>
+        <p>
+          Our project management platform helps teams collaborate, plan, and
+          track progress with ease. Streamline your workflow and boost
+          productivity with our powerful tools.
+        </p>
+        <a href="/projects" class="btn">Explore Projects</a>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+      <h2>Why Choose Our Platform?</h2>
+      <div class="feature-container">
+        <div class="feature">
+          <h3>Task Management</h3>
+          <p>Organize your tasks effectively with deadlines and priorities.</p>
+        </div>
+        <div class="feature">
+          <h3>Collaboration</h3>
+          <p>Work together with your team using real-time updates.</p>
+        </div>
+        <div class="feature">
+          <h3>Progress Tracking</h3>
+          <p>Monitor project progress with interactive dashboards.</p>
+        </div>
+        <div class="feature">
+          <h3>Secure & Reliable</h3>
+          <p>Your data is safe with end-to-end encryption and backups.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta">
+      <h2>Start Managing Your Projects Today</h2>
+      <a href="/signup" class="btn">Get Started</a>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>&copy; 2024 Project Management. All rights reserved.</p>
+    </footer>
+  </body>
 </html>
