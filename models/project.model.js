@@ -11,6 +11,11 @@ const projectSchema = new Schema(
         },
         deadline: {
             type: String,
+            default: ""
+        },
+        isCompleted: {
+            type: Boolean,
+            default: false
         },
         teams: [
             {
