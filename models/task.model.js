@@ -7,10 +7,18 @@ const taskSchema = new Schema(
             trim: true,
             required: true
         },
+        project: {
+            type: Schema.Types.ObjectId,
+            refs: "Project"
+        },
         details: {
             type: String,
             trim: true,
             required: true
+        },
+        assign: {
+            type: Schema.Types.ObjectId,
+            refs: "Team"
         },
         deadline: {
             type: String,
