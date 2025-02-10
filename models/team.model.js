@@ -7,12 +7,10 @@ const teamSchema = new Schema(
             trim: true,
             required: true
         },
-        tasks: [
-            {
-                type: Schema.Types.ObjectId,
-                ref: "Task"
-            }
-        ]
+        project: {
+            type: Schema.Types.ObjectId,
+            refs: "Project"
+        }
     },
     { timestamps: true }
 )
