@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OTP Verification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="flex items-center justify-center h-screen bg-gray-900 text-white"
+  >
+    <div class="w-96 p-6 bg-gray-800 rounded-lg shadow-md">
+      <h2 class="text-xl font-semibold text-center mb-4">Enter OTP</h2>
+
+      <% if (error) { %>
+      <p class="text-red-500 text-sm text-center"><%= error %></p>
+      <% } %>
+
+      <form action="/api/auth/verify" method="POST">
+        <input
+          type="text"
+          name="otp"
+          id="otp"
+          class="w-full px-4 py-2 mb-4 text-black rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Enter OTP"
+          required
+        />
+
+        <button
+          type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md"
+        >
+          Verify OTP
+        </button>
+      </form>
+
+      <button
+        id="resendBtn"
+        class="w-full mt-3 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-md"
+        onclick="resendOTP()"
+        disabled
+      >
+        Resend OTP (30s)
+      </button>
+    </div>
+  </body>
+</html>

@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="/css/form.css" />
   </head>
   <body>
+    <p>
+      <% if(error){ %>
+
+        <p><%= error %></p>
+
+      <% } %>
+    </p>
     <div class="formDiv">
       <div class="innerDiv">
         <p class="formTitle">Signup</p>
@@ -18,10 +25,23 @@
             required
           />
           <input
-            type="email"
+            type="text"
+            name="username"
+            placeholder="Enter your username"
+            required
+          />
+          <input
+            type="text"
             name="email"
             id="email"
             placeholder="Enter your email"
+            required
+          
+          />
+          <input
+            type="text"
+            name="organization"
+            placeholder="Enter your organization name"
             required
           />
           <input
@@ -30,12 +50,8 @@
             placeholder="Enter your password"
             required
           />
-          <div class="selectRole">
-            <select name="role">
-                <option value="user" selected>User</option>
-                <option value="admin">Admin</option>
-              </select>
-          </div>
+          
+        
           
           <input type="submit" value="Sign Up" />
         </form>
