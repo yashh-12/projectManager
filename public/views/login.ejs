@@ -1,25 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-    <link rel="stylesheet" href="/css/form.css">
-</head>
-<body>
-    <div class="formDiv">
-        <div class="innerDiv">
-            <% if(error) { %>
-            <p><%= error %></p>
-            <% } %>
-            <p class="formTitle">Login</p>
-                <form action="login" method="post" class="form">
-                    <!-- <input type="text" name="name" placeholder="Enter your name"> -->
-                    <input type="email" name="email" id="email" placeholder="Enter your email" required>
-                    <input type="password" name="password" placeholder="Enter your password" required>
-                    <input type="submit" value="Login">
-                </form>
-            <p><a href="signup" class="link"> Signup?</a></p></div>
+    <!-- <link rel="stylesheet" href="/css/form.css"> -->
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  </head>
+  <body>
+    <div class="bg-gray-800 flex justify-center items-center min-h-screen">
+    <div class="bg-gray-700 p-8 rounded-lg w-full max-w-sm shadow-lg">
+      <h2 class="text-center text-3xl text-white font-bold mb-6">Login</h2>
+      <form>
+        <div class="mb-4">
+          <label class="block text-gray-200 font-medium mb-2" for="email"
+            >Email or Username</label
+          >
+          <input
+            class="w-full px-3 py-2 rounded-lg bg-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-gray-400"
+            type="text"
+            name="usernameOrEmail"
+            placeholder="Email or Username"
+          />
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-200 font-medium mb-2" for="password"
+            >Password</label
+          >
+          <input
+            class="w-full px-3 py-2 rounded-lg bg-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-gray-400"
+            type="password"
+            name="password"
+            placeholder="Password"
+          />
+        </div>
+        <button
+          class="w-full max-w-sm py-2 bg-blue-600 hover:bg-blue-700 mt-4 rounded-lg text-white"
+          type="submit"
+        >
+          Login
+        </button>
+        <button
+          class="w-full max-w-sm py-2 mt-4 rounded-lg text-white"
+          type="submit"
+        >
+        <a href="/api/auth/signup">Signup?</a>
+        </button>
+        
+      </form>
     </div>
-</body>
+    </div>
+  </body>
 </html>

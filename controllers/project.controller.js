@@ -103,7 +103,7 @@ const deleteProject = asyncHandler(async (req, res) => {
 })
 
 const toggleflagIsCompleted = asyncHandler(async (req, res) => {
-    const { projectId } = req.paarams
+    const { projectId } = req.params
 
     if (!isValidObjectId(projectId)) {
         throw new apiError(400, "Invalid project ID")

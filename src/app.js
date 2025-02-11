@@ -28,8 +28,8 @@ import userRouter from "../routes/user.routes.js";
 // routes
 app.use("/api/auth", userRouter);
 
-app.get("/",authenticateUser,(req,res) => {
-  res.render("index");
+app.get("/",(req,res) => {
+  res.render("index",{error:"Something went wrong"});
 })
 
 
