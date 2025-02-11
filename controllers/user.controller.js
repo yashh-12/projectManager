@@ -4,7 +4,7 @@ import apiResponse from "../utils/apiResponse.js";
 import apiError from "../utils/apiError.js";
 import sendVerificationEmail from "../utils/nodeMailer.js";
 import jwt from "jsonwebtoken";
-import { error, log } from "console";
+// import { error, log } from "console";
 
 const registerUser = asyncHandler(async (req, res) => {
   // console.log(req.body);
@@ -64,25 +64,37 @@ const loginUser = asyncHandler(async (req, res) => {
   user.refreshToken = refreshToken;
   await user.save();
 
-  const options = {
+  const optionsForAccessToken = {
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
     httpOnly: true,
-    secure: process.env.NODE_ENV == "production" ? true : false,
+    secure: process.env.NODE_ENV == "production"? true : false,
   };
 
-  req.session.regenerate(async (err) => {
+  const optionsForRefreshToken = {
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+    httpOnly: true,
+    secure: process.env.NODE_ENV == "production"? true : false,
+  };
 
-    if (err) {
-      console.log("Session creation failed", err);
-      return res.render("login", { error: "Something went wrong. Try again." });
-    }
+  
 
-    req.session.otp = await sendVerificationEmail(user.email);
+  
+      req.session.regenerate(async (err) => {
 
-    res
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", refreshToken, options)
-      .redirect("/api/auth/verify");
-  });
+        if (err) {
+          console.log("Session creation failed", err);
+          return res.render("login", { error: "Something went wrong. Try again." });
+        }
+
+        req.session.otp = await sendVerificationEmail(user.email);
+        // console.log(req.session.otp);
+        
+        return res
+          .cookie("accessToken", accessToken, optionsForAccessToken)
+          .cookie("refreshToken", refreshToken, optionsForRefreshToken)
+          .redirect("/api/auth/verify");
+      })
+
 
 });
 
@@ -122,49 +134,49 @@ const verifyUser = asyncHandler(async (req, res) => {
 
 });
 
-const refreshAccessToken = asyncHandler(async (req, res) => {
-  const refreshToken = req.cookies?.refreshToken;
+// const refreshAccessToken = asyncHandler(async (req, res) => {
+//   const refreshToken = req.cookies?.refreshToken;
 
-  if (!refreshToken) throw new apiError(401, "Please Provide a refresh token");
+//   if (!refreshToken) throw new apiError(401, "Please Provide a refresh token");
 
-  const decodedToken = await jwt.decode(
-    refreshToken,
-    process.env.REFRESH_TOKEN_SECRET
-  );
-  //   console.log(decodedToken);
+//   const decodedToken = await jwt.decode(
+//     refreshToken,
+//     process.env.REFRESH_TOKEN_SECRET
+//   );
+//   //   console.log(decodedToken);
 
-  if (!decodedToken) throw new apiError(401, "Invalid refresh token");
+//   if (!decodedToken) throw new apiError(401, "Invalid refresh token");
 
-  const user = await User.findById(decodedToken.id);
+//   const user = await User.findById(decodedToken.id);
 
-  console.log(user);
+//   console.log(user);
 
-  if (!user) throw new apiError(401, "Invalid Refresh token");
+//   if (!user) throw new apiError(401, "Invalid Refresh token");
 
-  if (!user.refreshToken === refreshToken) {
-    throw new apiError(401, "Invalid Refresh token");
-  }
+//   if (!user.refreshToken === refreshToken) {
+//     throw new apiError(401, "Invalid Refresh token");
+//   }
 
-  const accessToken = await user.generateAccessToken();
-  // const newRefreshToken = await user.generateRefreshToken();
+//   const accessToken = await user.generateAccessToken();
+//   // const newRefreshToken = await user.generateRefreshToken();
 
-  const options = {
-    expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-  };
+//   const options = {
+//     expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+//     httpOnly: true,
+//     secure: process.env.NODE_ENV === "production",
+//   };
 
-  res
-    .status(200)
-    .cookie("accessToken", accessToken, options)
-    .json(
-      new apiResponse(
-        200,
-        { accessToken, refreshToken },
-        "Refreshed successfully"
-      )
-    );
-});
+//   res
+//     .status(200)
+//     .cookie("accessToken", accessToken, options)
+//     .json(
+//       new apiResponse(
+//         200,
+//         { accessToken, refreshToken },
+//         "Refreshed successfully"
+//       )
+//     );
+// });
 
 const renderLoginPage = asyncHandler(async (req, res) => {
   res.render("login", { error: "" });
@@ -250,7 +262,6 @@ export {
   loginUser,
   logoutUser,
   verifyUser,
-  refreshAccessToken,
   renderVerifyPage,
   renderLoginPage,
   renderSignupPage,

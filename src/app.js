@@ -6,6 +6,8 @@ import CookieParser from "cookie-parser";
 import ejsmate from "ejs-mate";
 import path from "path";
 import isLoggedIn from "../middelware/loggedIn.js";
+import refreshAccessToken from "../middelware/refreshAceesToken.js";
+
 
 dotenv.config({
   path: "../.env",
@@ -22,7 +24,7 @@ app.set("view engine", "ejs");
 app.set("views", "./public/views");
 app.engine("ejs", ejsmate);
 app.use(session({
-  secret: process.env.SESSION_SECRET, // Your session secret
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { secure: process.env.NODE_ENV === 'production' ? true : false },
@@ -30,12 +32,11 @@ app.use(session({
 
 //import routes
 import userRouter from "../routes/user.routes.js";
-import { error } from "console";
 
 // routes
 app.use("/api/auth", userRouter);
 
-app.get("/", isLoggedIn, (req, res) => {
+app.get("/",refreshAccessToken ,isLoggedIn, (req, res) => {
   res.render("index", { isLoggedIn: req.isLoggedIn, error: "error" });
 });
 
