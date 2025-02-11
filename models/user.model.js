@@ -40,7 +40,7 @@ const userSchema = mongoose.Schema(
       select: false,
     },
     userPrefs: {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       refs: "Preference"
     },
     refreshToken: {
