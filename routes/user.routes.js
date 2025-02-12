@@ -17,8 +17,7 @@ router.route("/signup").post(registerUser);
 router.route("/login").post(loginUser);
 router.route("/logout").get(logoutUser);
 router.route("/verify").get(renderVerifyPage);
-router.route("/verify").post(authenticateUser,verifyUser);
-// router.route("/refresh-token").get(refreshAccessToken);
+router.route("/verify").post(verifyUser);
 router.route("/login").get(renderLoginPage);
 router.route("/signup").get(renderSignupPage);
 
