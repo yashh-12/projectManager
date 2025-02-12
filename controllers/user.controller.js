@@ -4,13 +4,11 @@ import apiResponse from "../utils/apiResponse.js";
 import apiError from "../utils/apiError.js";
 import sendVerificationEmail from "../utils/nodeMailer.js";
 import jwt from "jsonwebtoken";
-// import { error, log } from "console";
 
 const registerUser = asyncHandler(async (req, res) => {
-  // console.log(req.body);
 
-  const { name, username, organization, email, password } = req.body;
-  if (!name || !username || !password || !organization || !email) {
+  const { name, username, email, password } = req.body;
+  if (!name || !username || !password || !email) {
     return res.render("signup", { error: "Please enter all fields" });
   }
 
@@ -18,29 +16,32 @@ const registerUser = asyncHandler(async (req, res) => {
     $or: [{ email: email }, { username: username }],
   });
 
-  // console.log(existingUser);
-
   if (existingUser)
     return res.render("signup", { error: "User already exist" });
-
-  // throw new apiError(400,"User already Exist")
 
   const newUser = await User.create({
     name,
     email,
     password,
     username,
-    organization,
   });
 
   if (!newUser)
-    return res.render("register", { error: "User registration failed" });
+    return res.render("signup", { error: "User registration failed" });
 
-  res.redirect("/");
+  req.session.regenerate(async (err) => {
+    if (err) {
+      console.log("Session creation failed", err);
+      return res.render("login", { error: "Something went wrong. Try again." });
+    }
+    req.session.email = newUser.email;
+    req.session.userId = newUser._id;
+
+    return res.redirect("/api/auth/verify");
+  });
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-
   const { usernameOrEmail, password } = req.body;
 
   if (!usernameOrEmail || !password)
@@ -67,35 +68,19 @@ const loginUser = asyncHandler(async (req, res) => {
   const optionsForAccessToken = {
     expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
     httpOnly: true,
-    secure: process.env.NODE_ENV == "production"? true : false,
+    secure: process.env.NODE_ENV == "production" ? true : false,
   };
 
   const optionsForRefreshToken = {
     expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
     httpOnly: true,
-    secure: process.env.NODE_ENV == "production"? true : false,
+    secure: process.env.NODE_ENV == "production" ? true : false,
   };
 
-  
-
-  
-      req.session.regenerate(async (err) => {
-
-        if (err) {
-          console.log("Session creation failed", err);
-          return res.render("login", { error: "Something went wrong. Try again." });
-        }
-
-        req.session.otp = await sendVerificationEmail(user.email);
-        // console.log(req.session.otp);
-        
-        return res
-          .cookie("accessToken", accessToken, optionsForAccessToken)
-          .cookie("refreshToken", refreshToken, optionsForRefreshToken)
-          .redirect("/api/auth/verify");
-      })
-
-
+  return res
+    .cookie("accessToken", accessToken, optionsForAccessToken)
+    .cookie("refreshToken", refreshToken, optionsForRefreshToken)
+    .redirect("/");
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -103,20 +88,11 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 const verifyUser = asyncHandler(async (req, res) => {
-
   const { otp } = req.body;
   if (!otp) return res.render("verify", { error: "Please enter otp" });
 
-  const token = req.cookies?.refreshToken;
-
-  if (!token) return res.redirect("/api/auth/login");
-
-  const decodedToken = await jwt.verify(
-    token,
-    process.env.REFRESH_TOKEN_SECRET
-  );
-
-  const user = await User.findById(decodedToken.id);
+  const user = await User.findOne({ email: req.session.email });
+  if (!user) return res.redirect("/api/auth/register");
 
   if (otp != req.session.otp)
     return res.render("verify", { error: "Invalid otp" });
@@ -128,10 +104,8 @@ const verifyUser = asyncHandler(async (req, res) => {
     if (err) {
       return res.render("verify", { error: "Session destroy failed" });
     }
-    res.redirect("/"); 
+    res.redirect("/");
   });
-
-
 });
 
 // const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -253,8 +227,9 @@ const deleteUser = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, deletedUser, "successfully deleted user"));
 });
 
-const renderVerifyPage = asyncHandler((req, res) => {
-  res.render("verify", { error: "" });
+const renderVerifyPage = asyncHandler(async (req, res) => {
+  req.session.otp = await sendVerificationEmail(req.session.email);
+  return res.render("verify", { error: "" });
 });
 
 export {

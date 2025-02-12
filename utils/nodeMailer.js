@@ -8,8 +8,7 @@ const transporter = mailer.createTransport({
     },
 })
 const sendVerificationEmail = async (to) => {
-    const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
-    // console.log(process.env.EMAIL);
+    const otp = Math.floor(100000 + Math.random() * 900000); 
     
     const mailOptions = {
         from: process.env.EMAIL,

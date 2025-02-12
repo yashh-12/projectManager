@@ -8,10 +8,14 @@
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
   </head>
   <body>
+    <% if(error) { %>
+      <p class="text-red-600 "><%= error %></p>
+      <% } %>
     <div class="bg-gray-800 flex justify-center items-center min-h-screen">
       <div class="bg-gray-700 p-8 rounded-lg w-full max-w-sm shadow-lg">
+        
         <h2 class="text-center text-3xl text-white font-bold mb-6">Signup</h2>
-        <form>
+        <form action="/api/auth/signup" method="post">
           <div class="mb-2">
             <label class="block text-gray-200 font-medium mb-2" for="email"
               >Name</label
