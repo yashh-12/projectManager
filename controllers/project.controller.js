@@ -70,16 +70,42 @@ const deleteProject = asyncHandler(async (req, res) => {
         throw new apiError(404, "Project not found")
     }
 
-    if (project.teams.length()) {
-        for (let i = 0; i < project.teams.length(); i++) {
-            await TeamMembership.deleteMany({ teamId: project.teams[i] })
-        }
-        await Team.deleteMany({ project: { $eq: projectId } })
+    const teams=await Team.aggregate(
+        [
+            {
+                $match:{
+                    project:mongoose.Types.ObjectId(projectId)
+                }
+            },
+            {
+                $project:{
+                    _id:1,
+                    name:0,
+                    project:0
+                }
+            }
+        ]
+    )
+
+    if(teams.length){
+        teams.forEach(async(team)=>{
+            await TeamMembership.deleteMany({teamID:{ $eq: team._id }})
+            await Team.deleteOne(team._id)
+        })
     }
 
-    if (project.tasks.length()) {
-        await Task.deleteMany({ project: { $eq: projectId } })
-    }
+    await Task.deleteMany({project:{ $eq: projectId }})
+
+    // if (project.teams.length()) {
+    //     for (let i = 0; i < project.teams.length(); i++) {
+    //         await TeamMembership.deleteMany({ teamId: project.teams[i] })
+    //     }
+    //     await Team.deleteMany({ project: { $eq: projectId } })
+    // }
+
+    // if (project.tasks.length()) {
+    //     await Task.deleteMany({ project: { $eq: projectId } })
+    // }
 
     if (project.documents.length()) {
         // todo : To delete all the files from cloudinary
