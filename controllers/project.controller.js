@@ -7,7 +7,6 @@ import asyncHandler from "../utils/asyncHandler.js"
 import apiError from "../utils/apiError.js"
 import apiResponse from "../utils/apiResponse.js"
 import mongoose, { isValidObjectId } from "mongoose"
-import { name } from "ejs"
 
 const createNewProject = asyncHandler(async (req, res) => {
     const { orgId } = req.params
@@ -82,7 +81,7 @@ const deleteProject = asyncHandler(async (req, res) => {
         await Task.deleteMany({ project: { $eq: projectId } })
     }
 
-    if (project.decuments.length()) {
+    if (project.documents.length()) {
         // todo : To delete all the files from cloudinary
     }
 
@@ -143,7 +142,7 @@ const updateProjectDetails = asyncHandler(async (req, res) => {
     const { projectId } = req.params
     const { newName, newDeadline } = req.body
 
-    if(!newName && newDeadline){
+    if (!newName && newDeadline) {
         throw new apiError(400, "No field to update")
     }
 
@@ -151,42 +150,49 @@ const updateProjectDetails = asyncHandler(async (req, res) => {
         throw new apiError(400, "Invalid project ID")
     }
 
-    const project=await Project.findById(projectId)
+    const project = await Project.findById(projectId)
 
-    if(newName && newName.trim()){
-        project.name=newName.trim()
+    if (newName && newName.trim()) {
+        project.name = newName.trim()
     }
 
-    if(newDeadline && newDeadline.trim()){
-        project.deadline=newDeadline.trim()
+    if (newDeadline && newDeadline.trim()) {
+        project.deadline = newDeadline.trim()
     }
 
     const updatedProject = await Project.findByIdAndUpdate(
         projectId,
         {
-            $set:{
-                name:project.name,
-                deadline:project.deadline
+            $set: {
+                name: project.name,
+                deadline: project.deadline
             }
         },
-        {new:true}
+        { new: true }
     )
 
     return res
-    .status(200)
-    .json(new apiResponse(
-        200,
-        updatedProject,
-        "Project details updated"
-    ))
+        .status(200)
+        .json(new apiResponse(
+            200,
+            updatedProject,
+            "Project details updated"
+        ))
 })
 
 const addAFile = asyncHandler(async (req, res) => {
+    const { projectId } = req.params
 
+    const files = req.files
+    //todo : Upload files to cloudinary
 })
 
 const removeAFile = asyncHandler(async (req, res) => {
+    const { projectId } = req.params
 
+    const { fileIds } = req.body
+
+    //todo : Delete files from cloudinary
 })
 
 export {
