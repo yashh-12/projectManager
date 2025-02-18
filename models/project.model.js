@@ -12,18 +12,6 @@ const projectSchema = new Schema(
         deadline: {
             type: String,
         },
-        teams: [
-            {
-                type: Schema.Types.ObjectId,
-                refs: "Team"
-            }
-        ],
-        tasks: [
-            {
-                type: Schema.Types.ObjectId,
-                refs: "Task"
-            }
-        ],
         documents: [
             {
                 type: Object
