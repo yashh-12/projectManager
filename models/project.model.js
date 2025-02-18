@@ -17,18 +17,6 @@ const projectSchema = new Schema(
             type: Boolean,
             default: false
         },
-        teams: [
-            {
-                type: Schema.Types.ObjectId,
-                refs: "Team"
-            }
-        ],
-        tasks: [
-            {
-                type: Schema.Types.ObjectId,
-                refs: "Task"
-            }
-        ],
         documents: [
             {
                 type: Object
