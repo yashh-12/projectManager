@@ -1,44 +1,37 @@
-import express from "express";
-import dotenv from "dotenv";
 import connectDb from "../db/index.js";
-import session from "express-session";
-import CookieParser from "cookie-parser";
-import ejsmate from "ejs-mate";
-import path from "path";
 import isLoggedIn from "../middelware/loggedIn.js";
 import refreshAccessToken from "../middelware/refreshAceesToken.js";
+import expressServer from "../utils/expressServer.js";
 
+const app = expressServer();
 
-dotenv.config({
-  path: "../.env",
-});
-
-const app = express();
-
-// middelewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join("public")));
-app.use(CookieParser());
-app.set("view engine", "ejs");
-app.set("views", "./public/views");
-app.engine("ejs", ejsmate);
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' ? true : false },
-}))
 
 //import routes
 import userRouter from "../routes/user.routes.js";
 
+
 // routes
 app.use("/api/auth", userRouter);
 
-app.get("/",refreshAccessToken ,isLoggedIn, (req, res) => {
+
+//Home Route
+app.get("/", refreshAccessToken, isLoggedIn, (req, res) => {
   res.render("index", { isLoggedIn: req.isLoggedIn, error: "error" });
 });
+
+
+//404 Route
+app.use((req, res) => {
+  res.status(404).render("error", { error: "Page not found" });
+});
+
+
+//Error Handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).render("500");
+});
+
 
 //Connection Checking
 const connection = await connectDb();

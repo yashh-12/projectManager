@@ -12,7 +12,9 @@
       <h1>Project Management</h1>
       <div class="auth-links">
         <% if(isLoggedIn) { %>
-          <a href="/api/auth/logout" class="btn btn-logout">Logout</a>
+          <form action="/api/auth/logout" method="post">
+            <button class="btn btn-signup" type="submit">Logout</button>
+          </form>
         <% } else { %>
         <a href="/api/auth/login" class="btn">Login</a>
         <a href="/api/auth/signup" class="btn btn-signup">Sign Up</a>
