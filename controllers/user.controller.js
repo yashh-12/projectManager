@@ -84,7 +84,22 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  res.clearCookie("refreshToken").clearCookie("accessToken").redirect("/");
+  const accessToken = req.cookies?.accessToken;
+  if(!accessToken)
+    return res.redirect("/login");  
+
+  const decodedToken = await jwt.decode(accessToken, process.env.ACCESS_TOKEN_SECRET);
+  if(!decodedToken)
+    return res.redirect("/login");
+
+  const user = await User.findById(decodedToken.id);
+  if(!user)
+    return res.redirect("/login");
+
+  user.refreshToken = undefined;
+  await user.save();
+
+  return res.clearCookie("refreshToken").clearCookie("accessToken").redirect("/");
 });
 
 const verifyUser = asyncHandler(async (req, res) => {

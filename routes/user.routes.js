@@ -15,7 +15,7 @@ const router = Router();
 
 router.route("/signup").post(registerUser);
 router.route("/login").post(loginUser);
-router.route("/logout").get(logoutUser);
+router.route("/logout").post(logoutUser);
 router.route("/verify").get(renderVerifyPage);
 router.route("/verify").post(verifyUser);
 router.route("/login").get(renderLoginPage);
