@@ -99,7 +99,7 @@ const createNewTeam = asyncHandler(async (req, res) => {
         throw new apiError(404, "Project not found")
     }
 
-    const teamWithSameName = await Team.findOne({ $and: { name: name.toLowerCase(), project: mongoose.Types.ObjectId(projectId) } })
+    const teamWithSameName = await Team.findOne({ $and: [{ name: name.toLowerCase() }, { project: mongoose.Types.ObjectId(projectId) }] })
 
     if (teamWithSameName) {
         throw new apiError(400, "Team with same name already exists in the project")

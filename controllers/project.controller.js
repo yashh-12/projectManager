@@ -7,6 +7,7 @@ import asyncHandler from "../utils/asyncHandler.js"
 import apiError from "../utils/apiError.js"
 import apiResponse from "../utils/apiResponse.js"
 import mongoose, { isValidObjectId } from "mongoose"
+import { assign } from "nodemailer/lib/shared/index.js"
 
 const createNewProject = asyncHandler(async (req, res) => {
     const { orgId } = req.params
@@ -237,6 +238,95 @@ const getProjectMetaData = asyncHandler(async (req, res) => {
     //todo
 })
 
+const getAllTeams = asyncHandler(async (req, res) => {
+    const {projectId} = req.params
+
+    if(!isValidObjectId(projectId)){
+        throw new apiError(400, "Invalid project ID")
+    }
+
+    const teams = await Team.aggregate(
+        [
+            {
+                $match:{
+                    project:mongoose.Types.ObjectId(projectId)
+                }
+            },
+            {
+                $project:{
+                    _id:1,
+                    name:1
+                }
+            }
+        ]
+    )
+
+    return res
+    .status(200)
+    .json(new apiResponse(
+        200,
+        teams,
+        "All project teams"
+    ))
+})
+
+const getAllTasks = asyncHandler(async (req, res) => {
+    const {projectId} = req.params
+
+    if(!isValidObjectId(projectId)){
+        throw new apiError(400, "Invalid project ID")
+    }
+
+    const tasks = await Task.aggregate(
+        [
+            {
+                $match:{
+                    project:mongoose.Types.ObjectId(projectId)
+                }
+            },
+            {
+                $lookup:{
+                    from: "teams",
+                    foreignField: "_id",
+                    localField: "assign",
+                    as: "assign",
+                    pipeline:[
+                        {
+                            $project:{
+                                name:1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields:{
+                    assign:{
+                        $arrayElemAt:["$assign",0]
+                    }
+                }
+            },
+            {
+                $project:{
+                    _id:1,
+                    task:1,
+                    details:1,
+                    assign:1,
+                    deadline:1
+                }
+            }
+        ]
+    )
+
+    return res
+    .status(200)
+    .json(new apiResponse(
+        200,
+        tasks,
+        "All project tasks"
+    ))
+})
+
 export {
     createNewProject,
     deleteProject,
@@ -244,5 +334,7 @@ export {
     updateProjectDetails,
     addAFile,
     removeAFile,
-    getProjectMetaData
+    getProjectMetaData,
+    getAllTeams,
+    getAllTasks
 }
