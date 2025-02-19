@@ -221,11 +221,28 @@ const removeAFile = asyncHandler(async (req, res) => {
     //todo : Delete files from cloudinary
 })
 
+const getProjectMetaData = asyncHandler(async (req, res) => {
+    const {projectId} = req.params
+
+    if(!isValidObjectId(projectId)){
+        throw new apiError(400, "Invalid project ID")
+    }
+
+    const project = await Project.findById(projectId)
+
+    if(!project){
+        throw new apiError(404, "Project not found")
+    }
+
+    //todo
+})
+
 export {
     createNewProject,
     deleteProject,
     toggleflagIsCompleted,
     updateProjectDetails,
     addAFile,
-    removeAFile
+    removeAFile,
+    getProjectMetaData
 }
