@@ -7,7 +7,6 @@ import asyncHandler from "../utils/asyncHandler.js"
 import apiError from "../utils/apiError.js"
 import apiResponse from "../utils/apiResponse.js"
 import mongoose, { isValidObjectId } from "mongoose"
-import { name } from "ejs"
 
 const createNewProject = asyncHandler(async (req, res) => {
     const { orgId } = req.params
@@ -71,18 +70,44 @@ const deleteProject = asyncHandler(async (req, res) => {
         throw new apiError(404, "Project not found")
     }
 
-    if (project.teams.length()) {
-        for (let i = 0; i < project.teams.length(); i++) {
-            await TeamMembership.deleteMany({ teamId: project.teams[i] })
-        }
-        await Team.deleteMany({ project: { $eq: projectId } })
+    const teams=await Team.aggregate(
+        [
+            {
+                $match:{
+                    project:mongoose.Types.ObjectId(projectId)
+                }
+            },
+            {
+                $project:{
+                    _id:1,
+                    name:0,
+                    project:0
+                }
+            }
+        ]
+    )
+
+    if(teams.length){
+        teams.forEach(async(team)=>{
+            await TeamMembership.deleteMany({teamID:{ $eq: team._id }})
+            await Team.deleteOne(team._id)
+        })
     }
 
-    if (project.tasks.length()) {
-        await Task.deleteMany({ project: { $eq: projectId } })
-    }
+    await Task.deleteMany({project:{ $eq: projectId }})
 
-    if (project.decuments.length()) {
+    // if (project.teams.length()) {
+    //     for (let i = 0; i < project.teams.length(); i++) {
+    //         await TeamMembership.deleteMany({ teamId: project.teams[i] })
+    //     }
+    //     await Team.deleteMany({ project: { $eq: projectId } })
+    // }
+
+    // if (project.tasks.length()) {
+    //     await Task.deleteMany({ project: { $eq: projectId } })
+    // }
+
+    if (project.documents.length()) {
         // todo : To delete all the files from cloudinary
     }
 
@@ -143,7 +168,7 @@ const updateProjectDetails = asyncHandler(async (req, res) => {
     const { projectId } = req.params
     const { newName, newDeadline } = req.body
 
-    if(!newName && newDeadline){
+    if (!newName && newDeadline) {
         throw new apiError(400, "No field to update")
     }
 
@@ -151,42 +176,65 @@ const updateProjectDetails = asyncHandler(async (req, res) => {
         throw new apiError(400, "Invalid project ID")
     }
 
-    const project=await Project.findById(projectId)
+    const project = await Project.findById(projectId)
 
-    if(newName && newName.trim()){
-        project.name=newName.trim()
+    if (newName && newName.trim()) {
+        project.name = newName.trim()
     }
 
-    if(newDeadline && newDeadline.trim()){
-        project.deadline=newDeadline.trim()
+    if (newDeadline && newDeadline.trim()) {
+        project.deadline = newDeadline.trim()
     }
 
     const updatedProject = await Project.findByIdAndUpdate(
         projectId,
         {
-            $set:{
-                name:project.name,
-                deadline:project.deadline
+            $set: {
+                name: project.name,
+                deadline: project.deadline
             }
         },
-        {new:true}
+        { new: true }
     )
 
     return res
-    .status(200)
-    .json(new apiResponse(
-        200,
-        updatedProject,
-        "Project details updated"
-    ))
+        .status(200)
+        .json(new apiResponse(
+            200,
+            updatedProject,
+            "Project details updated"
+        ))
 })
 
 const addAFile = asyncHandler(async (req, res) => {
+    const { projectId } = req.params
 
+    const files = req.files
+    //todo : Upload files to cloudinary
 })
 
 const removeAFile = asyncHandler(async (req, res) => {
+    const { projectId } = req.params
 
+    const { fileIds } = req.body
+
+    //todo : Delete files from cloudinary
+})
+
+const getProjectMetaData = asyncHandler(async (req, res) => {
+    const {projectId} = req.params
+
+    if(!isValidObjectId(projectId)){
+        throw new apiError(400, "Invalid project ID")
+    }
+
+    const project = await Project.findById(projectId)
+
+    if(!project){
+        throw new apiError(404, "Project not found")
+    }
+
+    //todo
 })
 
 export {
@@ -195,5 +243,6 @@ export {
     toggleflagIsCompleted,
     updateProjectDetails,
     addAFile,
-    removeAFile
+    removeAFile,
+    getProjectMetaData
 }
