@@ -16,8 +16,10 @@ const registerUser = asyncHandler(async (req, res) => {
     $or: [{ email: email }, { username: username }],
   });
 
-  if (existingUser)
-    return res.render("signup", { error: "User already exist" });
+  if (existingUser){
+    req.session.email = existingUser.email;
+    return res.redirect("/api/auth/verify");
+  }
 
   const newUser = await User.create({
     name,
@@ -27,7 +29,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (!newUser)
-    return res.render("signup", { error: "User registration failed" });
+    return res.render("user/signup", { error: "User registration failed" });
 
   req.session.regenerate(async (err) => {
     if (err) {
@@ -45,19 +47,19 @@ const loginUser = asyncHandler(async (req, res) => {
   const { usernameOrEmail, password } = req.body;
 
   if (!usernameOrEmail || !password)
-    return res.render("login", { error: "Please enter all fields" });
+    return res.render("user/login", { error: "Please enter all fields" });
 
   const user = await User.findOne({
     $or: [{ email: usernameOrEmail }, { username: usernameOrEmail }],
   }).select("+password");
 
   if (!user)
-    return res.render("login", { error: "Please enter valid credentials" });
+    return res.render("user/login", { error: "Please enter valid credentials" });
 
   const isMatch = await user.isCorrectPassword(password);
 
   if (!isMatch)
-    return res.render("login", { error: "Please enter valid credentials" });
+    return res.render("user/login", { error: "Please enter valid credentials" });
 
   const accessToken = await user.generateAccessToken();
   const refreshToken = await user.generateRefreshToken();
@@ -106,10 +108,21 @@ const verifyUser = asyncHandler(async (req, res) => {
   const { otp } = req.body;
   if (!otp) return res.render("verify", { error: "Please enter otp" });
 
+  
   const user = await User.findOne({ email: req.session.email });
-  if (!user) return res.redirect("/api/auth/register");
-
-  if (otp != req.session.otp)
+  if (!user) return res.redirect("/api/auth/signup");
+  
+  if (req.session.otpAge + 60000 < Date.now()){
+    // req.session.destroy((err) => {
+      //   if (err) {
+    //     return res.render("verify", { error: "Session destroy failed" });
+    //   }    
+    // })
+    req.session.otp = undefined;
+    return res.render("verify", { error: "OTP expired. Please click Resend" });
+  }
+  // console.log(req.session);
+  if (otp != req.session?.otp)
     return res.render("verify", { error: "Invalid otp" });
 
   user.isVerified = true;
@@ -168,11 +181,11 @@ const verifyUser = asyncHandler(async (req, res) => {
 // });
 
 const renderLoginPage = asyncHandler(async (req, res) => {
-  res.render("login", { error: "" });
+  res.render("user/login", { error: "" });
 });
 
 const renderSignupPage = asyncHandler(async (req, res) => {
-  res.render("signup", { error: "" });
+  res.render("user/signup", { error: "" });
 });
 
 const changePassword = asyncHandler(async (req, res) => {
@@ -224,7 +237,7 @@ const changeUsername = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, user, "Username changed successfully"));
 });
 
-const deleteUser = asyncHandler(async (req, res) => {
+const deleteAccount = asyncHandler(async (req, res) => {
   const { password } = req.body;
   if (!password) throw new apiError(400, "Password is required");
 
@@ -243,9 +256,36 @@ const deleteUser = asyncHandler(async (req, res) => {
 });
 
 const renderVerifyPage = asyncHandler(async (req, res) => {
-  req.session.otp = await sendVerificationEmail(req.session.email);
+  if(!req.session.email)
+    res.redirect("/api/auth/signup")
+  req.session.otp = await sendVerificationEmail(req.session?.email);
+  req.session.otpAge = Date.now();
   return res.render("verify", { error: "" });
 });
+
+const getUserDetails = asyncHandler(async (req,res) => {
+  const user = await User.findById(req.user._id);
+  if(!user)
+    return res.redirect("api/auth/login");
+  return res.status(200).json(new apiResponse(200, user, "User details fetched successfully"));
+})
+
+const changeUserDetails = asyncHandler(async (req,res) => {
+    const {name,username,email} = req.body;
+    if(!name || !username || !email)
+      throw new apiError(400, "All fields are required");
+    const user = await User.findByIdAndUpdate(req.user._id, {
+      $set: {
+        name: name,
+        username: username,
+        email: email
+      }
+    }, {new: true});
+    if(!user)
+      throw new apiError(400, "User details update failed");
+    return res.status(200).json(new apiResponse(200, user, "User details updated successfully"));
+
+})
 
 export {
   registerUser,
@@ -257,5 +297,7 @@ export {
   renderSignupPage,
   changePassword,
   changeUsername,
-  deleteUser,
+  getUserDetails,
+  changeUserDetails,
+  deleteAccount,
 };
