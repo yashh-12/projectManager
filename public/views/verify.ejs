@@ -13,7 +13,7 @@
       <h2 class="text-xl font-semibold text-center mb-4">Enter OTP</h2>
 
       <% if (error) { %>
-      <p class="text-red-500 text-sm text-center"><%= error %></p>
+      <p class="text-red-500 text-sm text-center" id="error"><%= error %></p>
       <% } %>
 
       <form action="/api/auth/verify" method="POST">
@@ -35,13 +35,19 @@
       </form>
 
       <button
-        id="resendBtn"
-        class="w-full mt-3 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-md"
-        onclick="resendOTP()"
-        disabled
+      class="w-full mt-3 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-md"        
       >
-        Resend OTP (30s)
-      </button>
+      <a
+        id="resendBtn"
+        class="w-full mt-3 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-md"      
+        href="/api/auth/verify"  
+      >
+       Resend OTP
+    </a>
+  </button>
     </div>
+    
+    <!-- <script src="/js/timer.js"></script> -->
+
   </body>
 </html>
