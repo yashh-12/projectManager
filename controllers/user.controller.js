@@ -112,7 +112,7 @@ const verifyUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email: req.session.email });
   if (!user) return res.redirect("/api/auth/signup");
   
-  if (req.session.otpAge + 60000 < Date.now()){
+  if (req.session.otpAge + 180000 < Date.now()){
     // req.session.destroy((err) => {
       //   if (err) {
     //     return res.render("verify", { error: "Session destroy failed" });
@@ -121,7 +121,7 @@ const verifyUser = asyncHandler(async (req, res) => {
     req.session.otp = undefined;
     return res.render("verify", { error: "OTP expired. Please click Resend" });
   }
-  // console.log(req.session);
+  console.log(req.session);
   if (otp != req.session?.otp)
     return res.render("verify", { error: "Invalid otp" });
 

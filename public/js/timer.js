@@ -1,25 +1,23 @@
+const seconds = document.getElementById("timer");
+const timer = document.getElementById("resendBtn");
+const error = document.getElementById("error");
 
-const timer = document.getElementById('resendBtn');
-const error = document.getElementById('error');
-console.log(timer.innerHTML);
+console.log(seconds.innerHTML);
 
-if(timer && !error){
-    let second = 60;
-setInterval(()=>{
-    if(second > 0){
-        timer.innerHTML = `Resend in ${second - 1} seconds`;
-        second--;
+let second = seconds.innerHTML;
+if (seconds) {
+  setInterval(() => {
+    if (second > 0) {
+      second--;
+      seconds.innerHTML = second;
     }
     else{
-        timer.innerHTML = "Resend";
+      timer.innerHTML = "Resend"
+      timer.setAttribute("href", "/api/auth/verify");
     }
-},1000)
-setTimeout(()=>{
-    timer.setAttribute("href", "/api/auth/verify");
-},60000)
-}
-else{
-    timer.innerHTML = "Resend";
-    timer.setAttribute("href", "/api/auth/verify");
+  }, 1000);
 }
 
+setTimeout(() => {
+  timer.setAttribute("href", "/api/auth/verify");
+}, 60000);
