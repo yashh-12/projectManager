@@ -9,12 +9,12 @@ const organizationSchema = new Schema(
         },
         owner: {
             type: Schema.Types.ObjectId,
-            refs: "User"
+            ref: "User"
         },
         projects: [
             {
                 type: Schema.Types.ObjectId,
-                refs: "Project"
+                ref: "Project"
             }
         ]
     },

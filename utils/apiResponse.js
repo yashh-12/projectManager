@@ -3,7 +3,7 @@ class apiResponse{
         this.message = message;
         this.status = status;
         this.data = data;
-        this.success = this.status > 200 ;
+        this.success = this.status <= 200 ;
     }
 }
 
