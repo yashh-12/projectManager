@@ -2,34 +2,42 @@ import connectDb from "../db/index.js";
 import isLoggedIn from "../middelware/loggedIn.js";
 import refreshAccessToken from "../middelware/refreshAceesToken.js";
 import expressServer from "../utils/expressServer.js";
+import authenticateUser from "../utils/auth.js";
+import apiResponse from "../utils/apiResponse.js";
 
 const app = expressServer();
 
 
 //import routes
 import userRouter from "../routes/user.routes.js";
-
+import projectRouter from "../routes/project.routes.js";
+import organizationRouter from "../routes/organization.routes.js";
 
 // routes
 app.use("/api/auth", userRouter);
+app.use("/api/org", authenticateUser, projectRouter);
+app.use("/api/organization", authenticateUser, organizationRouter);
 
 
 //Home Route
 app.get("/", refreshAccessToken, isLoggedIn, (req, res) => {
-  res.render("index", { isLoggedIn: req.isLoggedIn, error: "error" });
+  // res.render("index", { isLoggedIn: req.isLoggedIn, error: "error" });
+  res.json(new apiResponse(200, { isLoggedIn: req.isLoggedIn, error: "" }, "Welcome to Home Page"));
 });
 
 
 //404 Route
 app.use((req, res) => {
-  res.status(404).render("error", { error: "Page not found" });
+  // res.status(404).render("error", { error: "Page not found" });
+  res.json(new apiResponse(404, { error: "" }, "Page not found"));
+
 });
 
 
 //Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).render("500");
+  res.json(new apiResponse(500, { error: err.stack }, "Internal Server Error"));
 });
 
 

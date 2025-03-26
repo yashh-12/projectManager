@@ -7,13 +7,16 @@ import asyncHandler from "../utils/asyncHandler.js"
 import apiError from "../utils/apiError.js"
 import apiResponse from "../utils/apiResponse.js"
 import mongoose, { isValidObjectId } from "mongoose"
-import { assign } from "nodemailer/lib/shared/index.js"
+import { deleteFromClodinary, uploadonCloudinary } from "../utils/cloudinary.js"
 
 const createNewProject = asyncHandler(async (req, res) => {
     const { orgId } = req.params
     const { name, deadline } = req.body
 
-    if (!name.trim()) {
+    // console.log("Request came");
+
+
+    if (!name?.trim()) {
         throw new apiError(400, "Name is required")
     }
 
@@ -23,9 +26,12 @@ const createNewProject = asyncHandler(async (req, res) => {
 
     const owner = await Organization.findById(orgId)
 
+
     if (!owner) {
-        throw new apiError(404, "Organization not found")
+        return res.render("/projects/allProjects",{hasOrganization:false})
     }
+
+    
 
     const project = await Project.create(
         {
@@ -34,6 +40,8 @@ const createNewProject = asyncHandler(async (req, res) => {
             isCompleted: false,
         }
     )
+    // console.log("Project created");
+    
 
     if (!project) {
         throw new apiError(500, "something went wrong while creating new project")
@@ -210,16 +218,62 @@ const updateProjectDetails = asyncHandler(async (req, res) => {
 const addAFile = asyncHandler(async (req, res) => {
     const { projectId } = req.params
 
-    const files = req.files
-    //todo : Upload files to cloudinary
+    if (isValidObjectId(projectId)) {
+        throw new apiError(400,"Project id Invalid")
+    }
+
+  
+
+
+    const response = await uploadonCloudinary(req?.file?.path)
+    console.log(response);
+
+    if(response)
+        throw new apiError(400,"Upload failed")
+
+    const document = {
+        url:response.url,
+        public_id:response.public_id
+    }
+
+    const project = await Project.findByIdAndUpdate(projectId,{
+        $push:{
+            documents:document
+        }
+    },{new:true})
+
+    if(project)
+        throw new apiError(400,"Upload failed")
+
+
+    res.status(200).json(new apiResponse(200,project,"SuccessFull"))
+    
+    
+
+    
 })
 
 const removeAFile = asyncHandler(async (req, res) => {
     const { projectId } = req.params
 
-    const { fileIds } = req.body
+    const { fileId } = req.body
 
-    //todo : Delete files from cloudinary
+    const project = await Project.findByIdAndUpdate(projectId,{
+        $pull:{
+            documents:fileId
+        }
+    },{new:true})
+
+    const deleted = deleteFromClodinary(fileId)
+
+    if(deleted){
+        throw new apiError(200,deleted,"file Deleted")
+    }
+
+    res.status(200).json(new apiResponse(200,project,"SuccessFull deleted"))
+
+    
+
 })
 
 const getProjectMetaData = asyncHandler(async (req, res) => {
@@ -235,7 +289,9 @@ const getProjectMetaData = asyncHandler(async (req, res) => {
         throw new apiError(404, "Project not found")
     }
 
-    //todo
+    
+    
+
 })
 
 const getAllTeams = asyncHandler(async (req, res) => {
@@ -281,7 +337,7 @@ const getAllTasks = asyncHandler(async (req, res) => {
         [
             {
                 $match:{
-                    project:mongoose.Types.ObjectId(projectId)
+                    project:new mongoose.Types.ObjectId(projectId)
                 }
             },
             {
@@ -327,6 +383,7 @@ const getAllTasks = asyncHandler(async (req, res) => {
     ))
 })
 
+
 export {
     createNewProject,
     deleteProject,
@@ -336,5 +393,5 @@ export {
     removeAFile,
     getProjectMetaData,
     getAllTeams,
-    getAllTasks
+    getAllTasks,
 }
