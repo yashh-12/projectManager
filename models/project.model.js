@@ -10,8 +10,8 @@ const projectSchema = new Schema(
             maxlength: 50,
         },
         deadline: {
-            type: String,
-            default: ""
+            type: Date,
+            default: Date.now()
         },
         isCompleted: {
             type: Boolean,

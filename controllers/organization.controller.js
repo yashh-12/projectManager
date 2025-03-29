@@ -45,7 +45,7 @@ const createUserOrganization = asyncHandler(async (req, res) => {
 const getUserOrganization = asyncHandler(async (req, res) => {
     const userId = req.user?._id
 
-    const userOrg = await Organization.findOne({ owner: userId })
+    const userOrg = await Organization.findOne({ owner: userId }).populate("projects")
 
     if (!userOrg) {
         throw new apiError(404, "User organization not found")

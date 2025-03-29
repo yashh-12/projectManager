@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Projects</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #1e1e2e;
+        color: #cdd6f4;
+      }
+      header {
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #1a1b26;
+        border-bottom: 1px solid #333;
+      }
+      h1, h2 {
+        margin: 0;
+        color: #f5e0dc;
+      }
+      .btn {
+        padding: 5px 10px;
+        margin: 10px 0;
+        border: none;
+        border-radius: 4px;
+        background-color: #89b4fa;
+        color: #1e1e2e;
+        cursor: pointer;
+      }
+      .btn-create-org {
+        background-color: #f38ba8;
+        color: #1e1e2e;
+      }
+      .project-list {
+        padding: 20px;
+      }
+      .project-item {
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #333;
+        border-radius: 4px;
+        background-color: #2e2e3e;
+      }
+      .form-group {
+        margin: 10px 0;
+      }
+      input[type="text"] {
+        padding: 5px;
+        border-radius: 4px;
+        border: 1px solid #333;
+        background-color: #2e2e3e;
+        color: #cdd6f4;
+      }
+      label.org-label {
+        color: #f38ba8;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Projects</h1>
+      <form action="/api/auth/logout" method="post">
+        <button type="submit" class="btn">Logout</button>
+      </form>
+    </header>
+
+    <% if (!hasOrganization) { %>
+      <section class="org-form">
+        <form action="/organization/register" method="post">
+          <div class="form-group">
+            <label for="orgName" class="org-label">Enter Your Organization Name:</label>
+            <input type="text" id="orgName" name="orgName" required />
+          </div>
+          <button type="submit" class="btn btn-create-org">Register Organization</button>
+        </form>
+      </section>
+    <% } %>
+
+    <section class="project-list">
+      <h2>Your Projects</h2>
+      <ul>
+        <% projects.forEach(project => { %>
+          <li class="project-item">
+            <h3><%= project.name %></h3>
+          </li>
+        <% }) %>
+      </ul>
+      
+      <h2>Add New Project</h2>
+      <form action="/api/projects/addproject" method="post">
+        <div class="form-group">
+          <label for="projectName">Project Name:</label>
+          <input type="text" id="projectName" name="name" minlength="3" maxlength="50" required />
+        </div>
+        <div class="form-group">
+          <label for="description">DeadLine:</label>
+          <input type="date" name="deadline" id="deadline" required>
+        </div>
+        <button type="submit" class="btn">Create Project</button>
+      </form>
+    </section>
+  </body>
+</html>
