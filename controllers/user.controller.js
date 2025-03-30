@@ -17,7 +17,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const existingUser = await User.findOne({
     $or: [{ email: email }, { username: username }],
-  }).select("--refreshToken --password");
+  }).select("-refreshToken -password");
 
 
   if (existingUser) {
@@ -292,7 +292,7 @@ const deleteAccount = asyncHandler(async (req, res) => {
 const getUserDetails = asyncHandler(async (req, res) => {
   // console.log("Getting user details ", req?.user);
 
-  const user = await User.findById(req?.user?._id).select("--refreshToken --password");
+  const user = await User.findById(req?.user?._id).select("-refreshToken -password");
 
   if (!user)
     return res.status(404).json(new apiError(404, "User not found"));
