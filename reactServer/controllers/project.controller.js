@@ -1,0 +1,599 @@
+import Project from "../models/project.model.js"
+import Team from "../models/team.model.js"
+import Task from "../models/task.model.js"
+import User from "../models/user.model.js"
+import TeamMembership from "../models/team-membership.model.js"
+import asyncHandler from "../utils/asyncHandler.js"
+import apiError from "../utils/apiError.js"
+import apiResponse from "../utils/apiResponse.js"
+import mongoose, { isValidObjectId } from "mongoose"
+import { deleteFromClodinary, uploadonCloudinary } from "../utils/cloudinary.js"
+
+const createNewProject = asyncHandler(async (req, res) => {
+    const { name, deadline } = req.body
+
+    if (!name?.trim()) {
+        throw new apiError(400, "Name is required")
+    }
+
+    const project = await Project.create(
+        {
+            name,
+            deadline,
+            owner: req?.user?._id,
+            isCompleted: false,
+        }
+    )
+
+
+    if (!project) {
+        throw new apiError(500, "something went wrong while creating new project")
+    }
+
+    const newProject = await Project.findOne(project._id)
+
+    // owner.projects = [newProject, ...owner.projects]
+
+    // await owner.save({ validateBeforeSave: false });
+
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                newProject,
+                "New project created successfully"
+            )
+        )
+})
+
+const deleteProject = asyncHandler(async (req, res) => {
+    const { projectId } = req.params
+
+    if (!isValidObjectId(orgId) || !isValidObjectId(projectId)) {
+        throw new apiError(400, "Org ID or Project ID is invalid")
+    }
+
+    const session = await Project.startSession();
+    try {
+        await session.withTransaction(async () => {
+            const deletedProject = await Project.findByIdAndDelete(projectId, { session });
+            if (!deletedProject) throw new Error("Project not found during transaction");
+
+            const tasksToDelete = await Task.find({ project: projectId }).session(session);
+            await Task.deleteMany({ project: projectId }, { session });
+
+            for (const task of tasksToDelete) {
+                const deletedTeam = await Team.findOneAndDelete({ taskId: task._id }, { session });
+                if (deletedTeam) {
+                    await TeamMembership.deleteMany({ teamId: deletedTeam._id }, { session });
+                }
+            }
+        });
+        console.log("Transaction complete.");
+    } catch (error) {
+        console.error("Transaction failed:", error);
+    } finally {
+        session.endSession();
+    }
+
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                204,
+                "",
+                "Project deleted successfully"
+            )
+        )
+})
+
+const toggleflagIsCompleted = asyncHandler(async (req, res) => {
+    const { projectId } = req.params
+
+    if (!isValidObjectId(projectId)) {
+        throw new apiError(400, "Invalid project ID")
+    }
+
+    const project = await Project.findById(projectId)
+
+    if (!project) {
+        throw new apiError(404, "Project not found")
+    }
+
+    project.isCompleted = !project.isCompleted
+
+    const updatedProject = await project.save()
+
+    // const updatedProject = await Project.findByIdAndUpdate(
+    //     projectId,
+    //     {
+    //         $set: {
+    //             isCompleted: project.isCompleted
+    //         }
+    //     },
+    //     { new: true }
+    // )
+
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                updatedProject,
+                updatedProject.isCompleted ? "Project marked as completed" : "Project unmarked from completed list"
+            )
+        )
+})
+
+const updateProjectDetails = asyncHandler(async (req, res) => {
+    const { projectId } = req.params
+    const { newName, newDeadline } = req.body
+
+    if (!newName && newDeadline) {
+        throw new apiError(400, "No field to update")
+    }
+
+    if (!isValidObjectId(projectId)) {
+        throw new apiError(400, "Invalid project ID")
+    }
+
+    const project = await Project.findById(projectId)
+
+    if (newName && newName.trim()) {
+        project.name = newName.trim()
+    }
+
+    if (newDeadline && newDeadline.trim()) {
+        project.deadline = newDeadline.trim()
+    }
+
+    const updatedProject = await project.save();
+
+    // const updatedProject = await Project.findByIdAndUpdate(
+    //     projectId,
+    //     {
+    //         $set: {
+    //             name: project.name,
+    //             deadline: project.deadline
+    //         }
+    //     },
+    //     { new: true }
+    // )
+
+    return res
+        .status(200)
+        .json(new apiResponse(
+            200,
+            updatedProject,
+            "Project details updated"
+        ))
+})
+
+const addAFile = asyncHandler(async (req, res) => {
+    const { projectId } = req.params
+
+    if (!isValidObjectId(projectId)) {
+        throw new apiError(400, "Project id Invalid")
+    }
+
+
+    const files = req.files;
+
+
+    files.forEach(async (element) => {
+        const result = await uploadonCloudinary(element.path)
+        console.log(result);
+
+        let response = {
+            url: result.url,
+            public_key: result.public_id
+        }
+        let project = await Project.findByIdAndUpdate(projectId, {
+            $push: {
+                documents: response
+            }
+        }, { new: true })
+
+    });
+
+    res.status(200).json(new apiResponse(200, {}, "SuccessFull"))
+
+})
+
+const removeAFile = asyncHandler(async (req, res) => {
+    const { projectId } = req.params
+
+    const { fileIds } = req.body
+
+    fileIds.forEach(async (fileId) => {
+        const project = await Project.findByIdAndUpdate(projectId, {
+            $pull: {
+                documents: fileId
+            }
+        }, { new: true })
+        deleteFromClodinary(fileId)
+
+    });
+
+
+
+    res.status(200).json(new apiResponse(200, {}, "SuccessFull deleted"))
+
+
+
+})
+
+const getProjectMetaData = asyncHandler(async (req, res) => {
+    const { projectId } = req.params
+
+    if (!isValidObjectId(projectId)) {
+        throw new apiError(400, "Invalid project ID")
+    }
+
+    const project = await Project.findById(projectId)
+
+    if (!project) {
+        throw new apiError(404, "Project not found")
+    }
+
+
+})
+
+const getAllTeams = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+  if (!isValidObjectId(projectId)) {
+    throw new apiError(400, "Invalid project ID");
+  }
+
+  const currentUserId = new mongoose.Types.ObjectId(req.user._id);
+
+  const teams = await Team.aggregate([
+    // Filter teams by project
+    {
+      $match: {
+        project: new mongoose.Types.ObjectId(projectId)
+      }
+    },
+    // Join with the projects collection to get the project owner
+    {
+      $lookup: {
+        from: "projects",
+        localField: "project",
+        foreignField: "_id",
+        as: "project"
+      }
+    },
+    { $unwind: "$project" },
+    // Join with teammemberships to get membership docs for each team
+    {
+      $lookup: {
+        from: "teammemberships",
+        localField: "_id",
+        foreignField: "teamID",
+        as: "memberships"
+      }
+    },
+    // Join with users to populate team_members from memberships
+    {
+      $lookup: {
+        from: "users",
+        let: { memberIds: "$memberships.member" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $in: ["$_id", "$$memberIds"] }
+            }
+          },
+          {
+            $project: { name: 1, username: 1, email: 1 }
+          }
+        ],
+        as: "team_members"
+      }
+    },
+    // Filter teams: show if current user is either the project owner OR a member of the team
+    {
+      $match: {
+        $or: [
+          { "project.owner": currentUserId },
+          { $expr: { $in: [currentUserId, "$team_members._id"] } }
+        ]
+      }
+    },
+    // Final projection
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        team_members: 1
+      }
+    }
+  ]);
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, teams, "All project teams where user is owner or team member"));
+});
+
+
+const getAllTasks = asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+    if (!isValidObjectId(projectId)) {
+      throw new apiError(400, "Invalid project ID");
+    }
+  
+    // Assume req.user._id is the logged-in user's id
+    const userId = new mongoose.Types.ObjectId(req.user._id);
+  
+    const tasks = await Task.aggregate([
+      // Filter tasks by projectId
+      { 
+        $match: { project: new mongoose.Types.ObjectId(projectId) } 
+      },
+      // Join the project to get owner details
+      { 
+        $lookup: {
+          from: "projects",
+          localField: "project",
+          foreignField: "_id",
+          as: "project"
+        }
+      },
+      { 
+        $unwind: "$project" 
+      },
+      // Join the team (assigned via 'assign')
+      { 
+        $lookup: {
+          from: "teams",
+          localField: "assign",
+          foreignField: "_id",
+          as: "team"
+        }
+      },
+      { 
+        $unwind: "$team" 
+      },
+      // Join team memberships for the assigned team
+      {
+        $lookup: {
+          from: "teammemberships",
+          localField: "team._id",
+          foreignField: "teamID",
+          as: "team_memberships"
+        }
+      },
+      // Build an array of team member IDs from the memberships
+      {
+        $addFields: {
+          teamMemberIds: {
+            $map: {
+              input: "$team_memberships",
+              as: "tm",
+              in: "$$tm.member"
+            }
+          }
+        }
+      },
+      // Filter tasks where the user is either the project owner or is in the team member IDs
+      {
+        $match: {
+          $or: [
+            { "project.owner": userId },
+            { teamMemberIds: userId }
+          ]
+        }
+      },
+      // Project final fields
+      {
+        $project: {
+          _id: 1,
+          task: 1,
+          details: 1,
+          status:1,
+          deadline: 1,
+          project: { _id: 1, name: 1, owner: 1 },
+          team: { _id: 1, name: 1 },
+          teamMemberIds: 1
+        }
+      }
+    ]);
+  
+    return res
+      .status(200)
+      .json(new apiResponse(200, tasks, "All project tasks where user is owner or team-member"));
+  });
+  
+
+const getMyProjects = asyncHandler(async (req, res) => {
+    const projects = await Project.find({
+        owner: req?.user?._id
+    })
+
+    return res.status(200).json(new apiResponse(200, projects, "All my projects"))
+
+})
+
+const getJoinedProjects = asyncHandler(async (req, res) => {
+    const projects = await TeamMembership.find({ member: req.user._id }).populate('teamId').populate("project")
+
+    return res.status(200).json(new apiResponse(200, projects, "All joined projects"))
+
+})
+
+const getAllProjects = asyncHandler(async (req, res) => {
+    const userId = req.user._id
+
+
+    const projects = await Project.aggregate([
+      { $match: { owner: userId } },
+      { $addFields: { role: "Owner" } },
+    
+      {
+        $unionWith: {
+          coll: "teammemberships",
+          pipeline: [
+            { $match: { member: userId } },
+    
+            {
+              $lookup: {
+                from: "teams",
+                localField: "teamID",
+                foreignField: "_id",
+                as: "team",
+              },
+            },
+            { $unwind: "$team" },
+    
+            {
+              $lookup: {
+                from: "projects",
+                localField: "team.project",
+                foreignField: "_id",
+                as: "project",
+              },
+            },
+            { $unwind: "$project" },
+    
+            {
+              $addFields: { role: "Team Member" },
+            },
+    
+            {
+              $project: {
+                _id: "$project._id",
+                name: "$project.name",
+                deadline: "$project.deadline",
+                isCompleted: "$project.isCompleted",
+                owner: "$project.owner",
+                documents: "$project.documents",
+                createdAt: "$project.createdAt",
+                updatedAt: "$project.updatedAt",
+                role: 1,
+              },
+            },
+          ],
+        },
+      },
+    
+      {
+        $group: {
+          _id: "$_id",
+          name: { $first: "$name" },
+          deadline: { $first: "$deadline" },
+          isCompleted: { $first: "$isCompleted" },
+          owner: { $first: "$owner" },
+          documents: { $first: "$documents" },
+          createdAt: { $first: "$createdAt" },
+          updatedAt: { $first: "$updatedAt" },
+          role: { $first: "$role" },
+        },
+      },
+    ]);
+    
+    
+    console.log(projects);
+    
+
+
+    return res.status(200).json(new apiResponse(200, projects, "All user projects"))
+})
+
+const getProjectOverview = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+
+  const taskOverview = await Task.aggregate([
+    {
+      $match: {
+        project: new mongoose.Types.ObjectId(projectId)
+      }
+    },
+    {
+      $facet: {
+        totalTasks: [{ $count: "count" }],
+        completedTasks: [
+          { $match: { status: true } },
+          { $count: "count" }
+        ]
+      }
+    },
+    {
+      $project: {
+        totalTasks: { $ifNull: [{ $arrayElemAt: ["$totalTasks.count", 0] }, 0] },
+        completedTasks: { $ifNull: [{ $arrayElemAt: ["$completedTasks.count", 0] }, 0] }
+      }
+    }
+  ]);
+
+  const teamOverview = await Team.aggregate([
+    {
+      $match: {
+        project: new mongoose.Types.ObjectId(projectId)
+      }
+    },
+    {
+      $facet: {
+        totalTeams: [{ $count: "count" }],
+        teamIDs: [
+          { $project: { _id: 1 } }
+        ]
+      }
+    },
+    {
+      $unwind: "$teamIDs"
+    },
+    {
+      $lookup: {
+        from: "teammemberships",
+        localField: "teamIDs._id",
+        foreignField: "teamID",
+        as: "members"
+      }
+    },
+    {
+      $project: {
+        teamID: "$teamIDs._id",
+        membersCount: { $size: "$members" }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalTeams: { $sum: 1 },
+        totalMembers: { $sum: "$membersCount" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        totalTeams: 1,
+        totalMembers: 1
+      }
+    }
+  ]);
+
+  const overview = {
+    ...taskOverview[0],
+    ...(teamOverview[0] || { totalTeams: 0, totalMembers: 0 })
+  };
+
+  res.status(200).json(new apiResponse(200, overview, "Project overview"));
+});
+
+
+export {
+    createNewProject,
+    deleteProject,
+    toggleflagIsCompleted,
+    updateProjectDetails,
+    addAFile,
+    removeAFile,
+    getProjectMetaData,
+    getAllTeams,
+    getAllTasks,
+    getMyProjects,
+    getJoinedProjects,
+    getAllProjects,
+    getProjectOverview
+}
