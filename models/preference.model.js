@@ -6,11 +6,6 @@ const preferenceSchema = new Schema(
             type: String,
             trim: true,
             default: "light",
-
-        },
-        verificationCode: {
-            type: Number,
-            default: null
         }
     }
 )
