@@ -10,13 +10,7 @@ const organizationSchema = new Schema(
         owner: {
             type: Schema.Types.ObjectId,
             ref: "User"
-        },
-        projects: [
-            {
-                type: Schema.Types.ObjectId,
-                ref: "Project"
-            }
-        ]
+        }
     },
     { timestamp: true }
 )

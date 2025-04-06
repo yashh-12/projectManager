@@ -9,6 +9,10 @@ const projectSchema = new Schema(
             minlength: 3,
             maxlength: 50,
         },
+        organization: {
+            type: Schema.Types.ObjectId,
+            refs: "organization"
+        },
         deadline: {
             type: Date,
             default: Date.now()
