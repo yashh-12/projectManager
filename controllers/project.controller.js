@@ -24,7 +24,7 @@ const createNewProject = asyncHandler(async (req, res) => {
         throw new apiError(400, "Invalid organization ID")
     }
 
-    const owner = await Organization.findById(orgId)
+    const organization = await Organization.findById(orgId)
 
 
     if (!owner) {
@@ -36,6 +36,7 @@ const createNewProject = asyncHandler(async (req, res) => {
     const project = await Project.create(
         {
             name,
+            organization,
             deadline,
             isCompleted: false,
         }
@@ -48,10 +49,6 @@ const createNewProject = asyncHandler(async (req, res) => {
     }
 
     const newProject = await Project.findOne(project._id)
-
-    owner.projects = [newProject, ...owner.projects]
-
-    await owner.save({ validateBeforeSave: false });
 
     return res
         .status(200)
@@ -71,8 +68,6 @@ const deleteProject = asyncHandler(async (req, res) => {
         throw new apiError(400, "Org ID or Project ID is invalid")
     }
 
-    const owner = await Organization.findOne(orgId)
-
     const project = await Project.findOne(projectId)
 
     if (!project) {
@@ -88,41 +83,27 @@ const deleteProject = asyncHandler(async (req, res) => {
             },
             {
                 $project:{
-                    _id:1,
-                    name:0,
-                    project:0
+                    _id:1
                 }
             }
         ]
     )
 
+    teams = teams.map((team) => team._id)
+
     if(teams.length){
-        teams.forEach(async(team)=>{
-            await TeamMembership.deleteMany({teamID:{ $eq: team._id }})
-            await Team.deleteOne(team._id)
-        })
+        await TeamMembership.deleteMany({teamID:{$in:teams}})
     }
+
+    await Team.deleteMany({project:{ $eq: projectId}})
 
     await Task.deleteMany({project:{ $eq: projectId }})
 
-    // if (project.teams.length()) {
-    //     for (let i = 0; i < project.teams.length(); i++) {
-    //         await TeamMembership.deleteMany({ teamId: project.teams[i] })
-    //     }
-    //     await Team.deleteMany({ project: { $eq: projectId } })
-    // }
-
-    // if (project.tasks.length()) {
-    //     await Task.deleteMany({ project: { $eq: projectId } })
-    // }
-
     if (project.documents.length()) {
-        // todo : To delete all the files from cloudinary
+        project.documents.forEach(async(document) => {
+            await deleteFromClodinary(document.public_id)
+        })
     }
-
-    owner.projects = owner.projects.filter((p) => (p !== projectId))
-
-    await owner.save({ validateBeforeSave: false })
 
     await Project.deleteOne(projectId)
 

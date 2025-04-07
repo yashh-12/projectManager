@@ -1,8 +1,10 @@
 import Organization from "../models/organization.model.js";
+import User from "../models/user.model.js";
 import asyncHandler from "../utils/asyncHandler.js"
 import apiResponse from "../utils/apiResponse.js";
 import apiError from "../utils/apiError.js"
 import mongoose, { isValidObjectId } from "mongoose";
+import Project from "../models/project.model.js";
 
 const createUserOrganization = asyncHandler(async (req, res) => {
     const { name } = req.body
@@ -22,6 +24,15 @@ const createUserOrganization = asyncHandler(async (req, res) => {
         {
             name,
             owner: userId
+        }
+    )
+
+    await User.findByIdAndUpdate(
+        userId,
+        {
+            $set: {
+                organization: org._id
+            }
         }
     )
 
@@ -69,7 +80,21 @@ const getOrganizationProjects = asyncHandler(async (req, res) => {
         throw new apiError(400, "Invalid organization ID")
     }
 
-    const org = await Organization.findOne(orgId)
+    const org = await Project.aggregate(
+        [
+            {
+                $match: {
+                    organization: mongoose.Types.ObjectId(orgId)
+                }
+            },
+            {
+                $project: {
+                    "_id": 1,
+                    "name": 1
+                }
+            }
+        ]
+    )
 
     if (!org) {
         throw new apiError(404, "Organization not found")
