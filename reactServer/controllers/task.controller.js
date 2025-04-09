@@ -109,7 +109,7 @@ const assignTaskToTeam = asyncHandler(async (req, res) => {
 })
 
 const removeTeam = asyncHandler(async (req, res) => {
-    console.log("came");
+    // console.log("came");
 
     const { taskId } = req.params
     // const { teamId } = req.body
@@ -128,11 +128,9 @@ const removeTeam = asyncHandler(async (req, res) => {
         throw new apiError(404, "Task not found")
 
     }
-    console.log("done");
 
     return res.status(200).json(new apiResponse(200, task, "Task unassigned"))
 })
-
 
 const modifyTask = asyncHandler(async (req, res) => {
     const { taskId } = req.params
@@ -186,12 +184,17 @@ const getTaskData = asyncHandler(async (req, res) => {
         {
             $lookup: {
                 from: "teams",
-                localField: "assign", // <-- this is the team ID in task
+                localField: "assign",
                 foreignField: "_id",
                 as: "assigned_team"
             }
         },
-        { $unwind: "$assigned_team" },
+        {
+            $unwind: {
+                path: "$assigned_team",
+                preserveNullAndEmptyArrays: true // ✅ Ensures task is included even without a team
+            }
+        },
         {
             $lookup: {
                 from: "teammemberships",
@@ -236,11 +239,11 @@ const getTaskData = asyncHandler(async (req, res) => {
         }
     ]);
 
+
     return res
         .status(200)
         .json(new apiResponse(200, taskDetails[0], "Task details with team members"));
 });
-
 
 const toggleTaskStatus = asyncHandler(async (req, res) => {
     const { taskId } = req.params;
@@ -253,7 +256,8 @@ const toggleTaskStatus = asyncHandler(async (req, res) => {
 
     const task = await Task.findByIdAndUpdate(
         taskId,
-        { status: !doesTaskExist.status }
+        { status: !doesTaskExist.status },
+        { new: true }
     );
 
     if (!task) {
@@ -262,8 +266,6 @@ const toggleTaskStatus = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new apiResponse(200, task, "Task status toggled"));
 });
-
-
 
 export {
     createNewTask,

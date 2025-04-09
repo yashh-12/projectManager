@@ -1,68 +1,47 @@
 import React from 'react';
-import {useNavigate} from "react-router-dom"
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
-import {logout} from "../services/authService.js"
+import { logout } from "../services/authService.js";
 import { dispatchLogout } from '../store/authSlice';
 
 function Header() {
   const navigate = useNavigate();
-  const userState = useSelector((state) => state.auth.userState);
+  const userData = useSelector((state) => state.auth.userData);
   const dispatch = useDispatch();
 
   const handleLogout = async () => {
-    const res = await logout()
-    console.log(res);
-    
+    const res = await logout();
     if (res.success) {
-    dispatch(dispatchLogout());
-    navigate('/');
+      dispatch(dispatchLogout());
+      navigate('/');
     }
   };
 
   return (
-    <header
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '1rem',
-        backgroundColor: '#1f2937',
-        color: '#ffffff',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+    <header className="w-full flex items-center justify-between px-6 py-4 bg-gray-900 shadow-md text-white">
+      <div className="flex items-center gap-3 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-full cursor-pointer transition-shadow duration-200 shadow-md">
         <img
-          src={userState?.profileImage }
-          alt="User Profile"
-          style={{ borderRadius: '50%', marginRight: '0.5rem' }}
+          src={
+            userData?.avatar ||
+            'https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff'
+          }
+          alt="User"
+          className="w-9 h-9 rounded-full object-cover"
         />
-        <span>{userState?.name || 'User'}</span>
+        <span className="text-sm font-semibold">{userData?.username || 'User'}</span>
       </div>
 
-      <div style={{ flex: 1, marginLeft: '1rem', marginRight: '1rem' }}>
+      <div className="flex-1 mx-6">
         <input
           type="text"
           placeholder="Search..."
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            borderRadius: '0.375rem',
-            border: '1px solid #d1d5db',
-            outline: 'none',
-          }}
+          className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-300 text-sm"
         />
       </div>
 
       <button
-        style={{
-          backgroundColor: '#ef4444',
-          color: '#ffffff',
-          padding: '0.5rem 1rem',
-          borderRadius: '0.375rem',
-          border: 'none',
-          cursor: 'pointer',
-        }}
         onClick={handleLogout}
+        className="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition duration-200"
       >
         Logout
       </button>

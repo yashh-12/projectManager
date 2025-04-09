@@ -1,83 +1,176 @@
 import React, { useState } from 'react';
-import { Link, useLoaderData,NavLink, useNavigate, useNavigation } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { setLoaderFalse, setLoaderTrue } from '../store/uiSlice.js';
-import { createProject } from '../services/projectService.js';
+import { Link, useLoaderData, NavLink } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { createProject, deleteProject } from '../services/projectService.js';
+import { FaTrash } from 'react-icons/fa';
+
 function Sidebar() {
     const [isCreating, setIsCreating] = useState(false);
     const [projectName, setProjectName] = useState('');
-    const [deadline, setDeadline] = useState('');
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const fiveMonthsFromNow = new Date();
+    fiveMonthsFromNow.setMonth(fiveMonthsFromNow.getMonth() + 5);
+    const defaultDeadline = fiveMonthsFromNow.toISOString().split("T")[0];
+    const [deadline, setDeadline] = useState(defaultDeadline);
+    const [selectedProjectId, setSelectedProjectId] = useState(null);
+    const [projects, setProjects] = useState(useLoaderData()?.data || []);
     const dispatch = useDispatch();
-    const aProjects = useLoaderData();
-
-    
-
-    // console.log(aProjects?.data);
-
-    const renderProjects = (projects) => (
-        projects.map((project) => (
-            <NavLink
-                key={project._id || project.id}
-                to={`/projects/${project._id || project.id}/overview`}
-                className={({ isActive }) =>
-                    `block py-2 px-4 border border-gray-500 rounded mb-2 ${isActive ? 'bg-blue-600 text-white' : 'bg-gray-700 hover:bg-gray-600'}`
-                }
-            >
-                {project.name}
-            </NavLink>
-        ))
-    );
+    const userData = useSelector(state => state.auth.userData);
 
     const handleCreateProject = async () => {
-        console.log('Creating project:', { projectName, deadline });
         const res = await createProject(projectName, deadline);
-        if (res.success) {
+        console.log(res);
+        
+        if (res.success && res.data) {
+            setProjects(prev => [...prev, res.data]);
             setIsCreating(false);
             setProjectName('');
             setDeadline('');
-            window.location.reload();
         }
     };
 
+
+    const handleDelete = async () => {
+        try {
+            const res = await deleteProject(selectedProjectId);
+            console.log(res);
+            if(res.success){
+            setShowDeleteModal(false);
+            setProjects(projects.filter((p) => p._id!== selectedProjectId));
+            }
+        } catch (error) {
+            console.error("Failed to delete project:", error);
+        }
+    };
+
+    const renderProjects = () =>
+        projects.map((project) => (
+            <div key={project._id} className="flex items-center justify-between group">
+                <NavLink
+                    to={`/projects/${project._id}/overview`}
+                    className={({ isActive }) =>
+                        `flex items-center gap-2 flex-1 text-left px-4 py-2 rounded-lg transition ${isActive
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`
+                    }
+                >
+                    {project.name}
+                </NavLink>
+
+                {project.owner === userData?._id && (
+                    <button
+                        onClick={() => {
+                            setShowDeleteModal(true);
+                            setSelectedProjectId(project._id);
+                        }}
+                        className="ml-2 p-2 text-red-500 hover:text-red-700"
+                        title="Delete Project"
+                    >
+                        <FaTrash className="text-sm" />
+                    </button>
+                )}
+            </div>
+        ));
+
     return (
-        <aside className="w-64 bg-gray-800 p-4">
-            <nav className="space-y-4">
-                <div className="bg-gray-700 border border-gray-500 rounded mb-2 p-4">
-                    <Link to="/projects" className="block w-full text-left py-2 px-4 bg-blue-500 rounded">Dashboard</Link>
-                </div>
-                <div className="bg-gray-700 border border-gray-500 rounded mb-2 p-4">
-                    <h3 className="text-gray-400 mb-2">Projects</h3>
-                    {isCreating ? (
-                        <div className="mb-4">
-                            <input
-                                type="text"
-                                placeholder="Project Name"
-                                className="w-full p-2 mb-2 bg-gray-800 border border-gray-600 rounded"
-                                value={projectName}
-                                onChange={(e) => setProjectName(e.target.value)}
-                            />
-                            <input
-                                type="date"
-                                className="w-full p-2 mb-2 bg-gray-800 border border-gray-600 rounded"
-                                value={deadline}
-                                onChange={(e) => setDeadline(e.target.value)}
-                            />
-                            <button onClick={handleCreateProject} className="w-full py-2 px-4 bg-green-500 rounded mb-2">Submit</button>
-                            <button onClick={() => setIsCreating(false)} className="w-full py-2 px-4 bg-red-500 rounded">Cancel</button>
+        <>
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
+                    <div className="bg-gray-800 rounded-lg shadow-lg p-6 w-[90%] max-w-sm text-center border border-gray-700">
+                        <h2 className="text-xl font-bold mb-4">Delete Project?</h2>
+                        <p className="mb-6 text-gray-300">Are you sure you want to delete this project? This action cannot be undone.</p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={handleDelete}
+                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                            >
+                                Confirm Delete
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setSelectedProjectId(null);
+                                }}
+                                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition"
+                            >
+                                Cancel
+                            </button>
                         </div>
-                    ) : (
-                        <button className="w-full text-left py-2 px-4 bg-green-500 rounded mb-2" onClick={() => setIsCreating(true)}>
-                            Create Project
-                        </button>
-                    )}
-                    <div className="mb-4">
-                        {aProjects?.data?.length > 0 ? renderProjects(aProjects.data) : <p>No projects available</p>}
                     </div>
-                    <button className="w-full text-left py-2 px-4 bg-purple-500 rounded">Join a Projects</button>
                 </div>
-            </nav>
-        </aside>
-    )
+            )}
+
+            <aside className="w-64 min-h-screen bg-gray-900 text-white p-4 border-r border-gray-700 shadow-md">
+                <nav className="space-y-6">
+                    <Link
+                        to="/projects"
+                        className="block w-full text-left px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold shadow"
+                    >
+                        Dashboard
+                    </Link>
+
+                    <div className="bg-gray-800 p-4 rounded-lg shadow border border-gray-700">
+                        <h3 className="text-sm font-semibold text-gray-400 mb-3">Projects</h3>
+
+                        {isCreating ? (
+                            <div className="space-y-2 mb-4">
+                                <input
+                                    type="text"
+                                    placeholder="Project Name"
+                                    className="w-full p-2 text-sm bg-gray-900 border border-gray-600 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={projectName}
+                                    onChange={(e) => setProjectName(e.target.value)}
+                                    required
+                                />
+                                <input
+                                    type="date"
+                                    className="w-full p-2 text-sm bg-gray-900 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={deadline}
+                                    onChange={(e) => setDeadline(e.target.value)}
+                                />
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleCreateProject}
+                                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
+                                    >
+                                        Submit
+                                    </button>
+                                    <button
+                                        onClick={() => setIsCreating(false)}
+                                        className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setIsCreating(true)}
+                                className="w-full py-2 px-4 mb-4 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
+                            >
+                                + Create Project
+                            </button>
+                        )}
+
+                        {/* Projects List */}
+                        <div className="space-y-2">
+                            {projects?.length > 0 ? (
+                                renderProjects()
+                            ) : (
+                                <p className="text-sm text-gray-400">No projects available</p>
+                            )}
+                        </div>
+
+                        {/* Join Project Button */}
+                        <button className="w-full mt-4 py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition">
+                            Join a Project
+                        </button>
+                    </div>
+                </nav>
+            </aside>
+        </>
+    );
 }
 
-export default Sidebar
+export default Sidebar;

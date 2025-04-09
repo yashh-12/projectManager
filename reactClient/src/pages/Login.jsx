@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate, Link, NavLink } from "react-router-dom";
-import { setLoaderTrue, setLoaderFalse } from "../store/uiSlice";
-import { useDispatch } from "react-redux";
+import { setLoaderTrue, setLoaderFalse, setMessage } from "../store/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 import { login } from "../services/authService.js";
 import { dispatchLogin } from "../store/authSlice.js";
+import FlashMsg from "../components/FlashMsg.jsx";
 
 function Login() {
   const navigate = useNavigate();
@@ -16,9 +17,9 @@ function Login() {
     dispatch(setLoaderTrue());
     const res = await login(usernameOrEmail, password);
     console.log(res);
-    
     if (res.success) {
       dispatch(dispatchLogin());
+      dispatch(setMessage("Logged in successfully"));
       navigate("/projects");
       dispatch(setLoaderFalse());
     } else if(res.message === "Please verify your email") {
@@ -32,6 +33,7 @@ function Login() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+  
       <header className="w-full py-6 px-12 flex justify-between items-center bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
         <img
           src="../../project-management.png"

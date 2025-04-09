@@ -5,15 +5,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setLoaderTrue, setLoaderFalse } from '../store/uiSlice.js';
 import { FaEllipsisV, FaSadCry } from 'react-icons/fa';
 import { getAllTasks, getAllTeams } from "../services/projectService.js"
-import { setTasks, addTask as addTaskToStore } from '../store/taskSlice.js';
 import TaskDetail from './TaskDetail.jsx';
+import FlashMsg from './FlashMsg.jsx';
 
 function Task() {
 
     const dispatch = useDispatch();
     const [addTaskForm, setAddTaskForm] = useState(false);
     const [taskName, setTaskName] = useState('');
-    const [deadline, setDeadline] = useState(Date.now() + 1000 * 60 * 60 * 24 * 7);
+    const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0];
+
+    const [deadline, setDeadline] = useState(oneWeekFromNow);
     const [details, setDetails] = useState('');
     const { projectId } = useParams();
     const tasks = useLoaderData()
@@ -33,11 +37,19 @@ function Task() {
     const [isThereLoaderData, setIsThereLoaderData] = useState(true)
     const [originalTeam, setOriginalTeam] = useState([])
     const [searchText, setSearchText] = useState("")
+    const [notification, setNotification] = useState("")
 
     useEffect(() => {
         setAllTeams(originalTeam.filter(team => team.name.toLowerCase().includes(searchText.toLowerCase() || '')))
-
     }, [searchText])
+
+    useEffect(() => {
+        if (assignForm) {
+            document.body.classList.add("overflow-hidden");
+        } else {
+            document.body.classList.remove("overflow-hidden");
+        }
+    }, [assignForm]);
 
 
 
@@ -52,6 +64,10 @@ function Task() {
             setDetails('');
             setDeadline('');
             setAllTasks([...allTasks, res.data])
+            setNotification("Task added successfully")
+            setTimeout(() => {
+                setNotification("")
+            }, 2000)
         }
 
     };
@@ -60,7 +76,8 @@ function Task() {
         console.log('Modify Task:', task);
         setTaskName(task.task);
         setDetails(task.details);
-        setDeadline(task.deadline);
+        const formattedDate = task.deadline?.split('T')[0];
+        setDeadline(formattedDate);
 
         setModifyForm(true);
 
@@ -79,6 +96,10 @@ function Task() {
             setDetails('');
             setDeadline('');
             setFormTaskID(null)
+            setNotification("Task modified successfully")
+            setTimeout(() => {
+                setNotification("")
+            }, 2000)
         }
         setDropdownIndex(null);
     }
@@ -88,6 +109,10 @@ function Task() {
         if (res?.success) {
             console.log('Task deleted successfully:', res.data);
             setDropdownIndex(null)
+            setNotification("Task deleted successfully")
+            setTimeout(() => {
+                setNotification("")
+            }, 2000)
         }
         setAllTasks(allTasks.filter(task => task._id !== taskId))
     };
@@ -115,7 +140,10 @@ function Task() {
             ));
             setFormTaskID(null)
             setSelectedTeam(null)
-
+            setNotification("Task assigned successfully")
+            setTimeout(() => {
+                setNotification("")
+            }, 2000)
         }
 
         setDropdownIndex(null);
@@ -126,9 +154,12 @@ function Task() {
         const res = await removeATeam(taskId)
         if (res.success) {
             console.log('Team removed successfully:', res);
-            setAllTasks(allTasks.map(task => task._id === taskId ? { ...task, assign: null } : task))
+            setAllTasks(allTasks.map(task => task._id === taskId ? { ...task, team: null } : task))
             console.log(allTasks);
-
+            setNotification("Team removed successfully")
+            setTimeout(() => {
+                setNotification("")
+            }, 2000)
         }
         setDropdownIndex(null);
     };
@@ -136,6 +167,7 @@ function Task() {
     const getTaskDetails = async (taskId) => {
 
         const res = await getTaskData(taskId)
+        console.log("Task Details", res);
         if (res?.success) {
             setTaskDetails(res.data)
             setShowTaskDetails(true)
@@ -152,269 +184,340 @@ function Task() {
         if (res.success) {
             console.log('Task status toggled successfully:', res);
             setAllTasks(allTasks.map(task => task._id === taskId ? { ...task, status: !task.status } : task))
+            if (res?.data?.status) {
+                setNotification("Task Marked as Complete")
+                setTimeout(() => {
+                    setNotification("")
+                }, 2000)
+            } else {
+                setNotification("Task Marked as Pending")
+                setTimeout(() => {
+                    setNotification("")
+                }, 2000)
+            }
         }
     }
 
     return (
-        <div className="relative flex flex-col space-y-4 w-full">
-            <div className="flex justify-end">
-                <button
-                    onClick={() => setAddTaskForm(!addTaskForm)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-transform transform hover:scale-105"
-                >
-                    + Add Task
-                </button>
-            </div>
+        <>
+            {notification && <FlashMsg message={notification} setMessage={() => setNotification("")} />}
+            <div className="relative flex flex-col space-y-4 w-full">
+                <div className="flex justify-between items-center mb-4">
+                    <h1 className="text-2xl font-bold text-white">Your Tasks</h1>
 
-            {addTaskForm && (
-                <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-10">
-                    <form onSubmit={handleAddTask} className="bg-gray-800 p-6 rounded-lg shadow-xl w-96 space-y-4">
-                        <h2 className="text-xl font-semibold text-white">Add New Task</h2>
-                        <input
-                            type="text"
-                            placeholder="Task Name"
-                            value={taskName}
-                            onChange={(e) => setTaskName(e.target.value)}
-                            className="p-3 border rounded-lg bg-gray-700 text-white w-full"
-                        />
-                        <textarea
-                            value={details}
-                            onChange={(e) => setDetails(e.target.value)}
-                            placeholder="Task Details"
-                            className="p-3 border rounded-lg bg-gray-700 text-white w-full"
-                        />
-                        <input
-                            type="date"
-                            value={deadline}
-                            onChange={(e) => setDeadline(e.target.value)}
-                            className="p-3 border rounded-lg bg-gray-700 text-white w-full"
-                        />
-                        <div className="flex justify-between">
-                            <button
-                                type="button"
-                                onClick={() => setAddTaskForm(false)}
-                                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-transform transform hover:scale-105"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-transform transform hover:scale-105"
-                            >
-                                Submit Task
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
+                    <div className="flex gap-3">
+                        <button
+                            className="bg-purple-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-purple-700 transition-transform transform hover:scale-105"
+                        >
+                            Filter
+                        </button>
 
-            {showTaskDetails && <TaskDetail task={taskDetails} onClose={() => setShowTaskDetails(false)} />}
-
-            {modifyForm && (
-                <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-10">
-                    <form onSubmit={handleModifyTask} className="bg-gray-800 p-6 rounded-lg shadow-xl w-96 space-y-4">
-                        <h2 className="text-xl font-semibold text-white">Modify Task</h2>
-                        <input
-                            type="text"
-                            placeholder="Task Name"
-                            value={taskName}
-                            onChange={(e) => setTaskName(e.target.value)}
-                            className="p-3 border rounded-lg bg-gray-700 text-white w-full"
-                        />
-                        <textarea
-                            value={details}
-                            onChange={(e) => setDetails(e.target.value)}
-                            placeholder="Task Details"
-                            className="p-3 border rounded-lg bg-gray-700 text-white w-full"
-                        />
-                        <input
-                            type="date"
-                            value={deadline}
-                            onChange={(e) => setDeadline(e.target.value)}
-                            className="p-3 border rounded-lg bg-gray-700 text-white w-full"
-                        />
-                        <div className="flex justify-between">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setModifyForm(false);
-                                    setTaskName('');
-                                    setDetails('');
-                                    setDeadline('');
-                                }}
-                                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-transform transform hover:scale-105"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-transform transform hover:scale-105"
-                            >
-                                Modify Task
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-            {assignForm && (
-                <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
-                    <form
-                        onSubmit={(e) => handleAssignTeamToTask(e)}
-                        className="bg-gray-900 p-8 rounded-2xl shadow-2xl w-full max-w-lg space-y-6"
-                    >
-                        <h2 className="text-2xl font-bold text-white">Assign Team</h2>
-
-                        <input
-                            type="text"
-                            value={searchText}
-                            onChange={(e) => setSearchText(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
-                        />
-
-                        <div className="space-y-4">
-                            {allTeams.length > 0 ? (
-                                allTeams.map((ele) => (
-                                    <label
-                                        key={ele._id}
-                                        className="flex items-center space-x-3 bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition duration-300"
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="team"
-                                            value={ele._id}
-                                            onChange={() => { setSelectedTeam(ele._id); setSelectedTeamName(ele.name); }}
-                                            className="w-5 h-5 text-blue-500 focus:ring-2 focus:ring-blue-400"
-                                        />
-                                        <span className="text-white text-lg">{ele.name}</span>
-                                    </label>
-                                ))
-                            ) : (
-                                <p className="text-gray-400">No teams available</p>
-                            )}
-                        </div>
-
-                        <div className="flex justify-end space-x-4">
-                            <button
-                                type="button"
-                                onClick={() => setAssignForm(false)}
-                                className="bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 transition-transform transform hover:scale-105"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition-transform transform hover:scale-105"
-                            >
-                                Assign Team
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-
-            <div className="w-full bg-gray-800 p-6 rounded-lg shadow-lg">
-                {/* Header */}
-                <div className="grid grid-cols-5 gap-4 p-4 font-semibold bg-gray-700 rounded-lg mb-4 text-white">
-                    <div>Task</div>
-                    <div>Details</div>
-                    <div>Team</div>
-                    <div>Deadline</div>
-                    <div>Status</div>
+                        <button
+                            onClick={() => setAddTaskForm(!addTaskForm)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-transform transform hover:scale-105"
+                        >
+                            + Add Task
+                        </button>
+                    </div>
                 </div>
 
-                {/* Task Rows */}
-                <div className="space-y-4">
+
+                {addTaskForm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+                        <form
+                            onSubmit={handleAddTask}
+                            className="bg-gray-900 p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-md space-y-5 border border-gray-700"
+                        >
+                            <h2 className="text-2xl font-bold text-white text-center">📝 Add New Task</h2>
+
+                            <input
+                                type="text"
+                                required
+                                placeholder="Task Name"
+                                value={taskName}
+                                autoFocus
+                                onChange={(e) => setTaskName(e.target.value)}
+                                className="p-3 rounded-lg w-full bg-gray-800 text-white border border-gray-600 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+
+                            <textarea
+                                required
+                                placeholder="Task Details"
+                                value={details}
+                                onChange={(e) => setDetails(e.target.value)}
+                                rows="3"
+                                className="p-3 rounded-lg w-full bg-gray-800 text-white border border-gray-600 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            ></textarea>
+
+                            <input
+                                type="date"
+                                required
+                                value={deadline}
+                                onChange={(e) => setDeadline(e.target.value)}
+                                className="p-3 rounded-lg w-full bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+
+                            <div className="flex justify-between gap-4 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setAddTaskForm(false)}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition-all duration-200 shadow-md hover:scale-105"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-all duration-200 shadow-md hover:scale-105"
+                                >
+                                    Submit
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+
+                {showTaskDetails && <TaskDetail task={taskDetails} onClose={() => setShowTaskDetails(false)} />}
+
+                {modifyForm && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[9999] p-4">
+                        <form
+                            onSubmit={handleModifyTask}
+                            className="bg-[#1e1e2e] text-white p-6 rounded-2xl shadow-2xl w-full max-w-md space-y-5 border border-gray-700"
+                        >
+                            <h2 className="text-2xl font-bold border-b border-gray-600 pb-3 text-center">
+                                ✏️ Modify Task
+                            </h2>
+
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Task Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="Enter task name"
+                                    value={taskName}
+                                    autoFocus
+                                    onChange={(e) => setTaskName(e.target.value)}
+                                    className="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Details</label>
+                                <textarea
+                                    value={details}
+                                    onChange={(e) => setDetails(e.target.value)}
+                                    placeholder="Task details..."
+                                    className="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Deadline</label>
+                                <input
+                                    type="date"
+                                    value={deadline}
+                                    onChange={(e) => setDeadline(e.target.value)}
+                                    className="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-4 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setModifyForm(false);
+                                        setTaskName('');
+                                        setDetails('');
+                                        setDeadline('');
+                                        setDropdownIndex(null)
+                                    }}
+                                    className="bg-red-600 px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-transform transform hover:scale-105"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="bg-green-600 px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-transform transform hover:scale-105"
+                                >
+                                    Modify
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+                {assignForm && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[9999] p-4">
+                        <form
+                            onSubmit={(e) => handleAssignTeamToTask(e)}
+                            className="bg-[#1e1e2e] p-8 rounded-2xl shadow-2xl w-full max-w-lg space-y-6 border border-gray-700 text-white"
+                        >
+                            <h2 className="text-2xl font-bold border-b border-gray-600 pb-3 text-center">
+                                👥 Assign Team to Task
+                            </h2>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Search Teams</label>
+                                <input
+                                    type="text"
+                                    value={searchText}
+                                    onChange={(e) => setSearchText(e.target.value)}
+                                    placeholder="Type to filter teams..."
+                                    className="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            <div className="space-y-3 overflow-y-auto pr-2 max-h-[20rem] scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+                                {allTeams.length > 0 ? (
+                                    allTeams.map((ele) => (
+                                        <label
+                                            key={ele._id}
+                                            className={`flex items-center gap-3 p-4 rounded-lg border transition-colors cursor-pointer hover:bg-gray-700 ${selectedTeam === ele._id ? "border-blue-500" : "border-gray-600"
+                                                }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="team"
+                                                value={ele._id}
+                                                checked={selectedTeam === ele._id}
+                                                onChange={() => {
+                                                    setSelectedTeam(ele._id);
+                                                    setSelectedTeamName(ele.name);
+                                                }}
+                                                className="w-5 h-5 accent-blue-600"
+                                            />
+                                            <span className="text-lg">{ele.name}</span>
+                                        </label>
+                                    ))
+                                ) : (
+                                    <p className="text-center text-gray-400">No teams available</p>
+                                )}
+                            </div>
+
+
+                            <div className="flex justify-end gap-4 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setAssignForm(false)}
+                                    className="bg-red-600 px-5 py-2 rounded-lg font-semibold hover:bg-red-700 transition-transform transform hover:scale-105"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="bg-green-600 px-5 py-2 rounded-lg font-semibold hover:bg-green-700 transition-transform transform hover:scale-105"
+                                >
+                                    Assign
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+
+
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {allTasks.map((task, index) => (
                         <div
                             key={index}
-                            className="grid grid-cols-5 gap-4 items-center bg-gray-750 border border-gray-700 p-4 rounded-lg text-white"
+                            className="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 p-5 rounded-2xl text-white shadow-xl transition-transform transform hover:-translate-y-1 hover:shadow-2xl"
                         >
-                            {/* Column 1: Task */}
-                            <div
-                                className="text-lg font-medium cursor-pointer hover:underline"
-                                onClick={() => getTaskDetails(task._id)}
-                            >
-                                {task.task}
-                            </div>
+                            <div className="absolute top-3 right-3 flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    checked={!!task?.status}
+                                    onChange={() => handleTaskToggleStatus(task._id)}
+                                    className="w-5 h-5 text-blue-500 bg-blue-700 border-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                />
 
-                            {/* Column 2: Details */}
-                            <p className="text-sm text-gray-300">{task.details}</p>
 
-                            {/* Column 3: Team */}
-                            <p className="text-sm text-gray-400">
-                                {task?.team?.name || "No Team Assigned"}
-                            </p>
-
-                            {/* Column 4: Deadline */}
-                            <p className="text-sm text-gray-400">
-                                {task?.deadline?.slice(0, 10) || "No Deadline"}
-                            </p>
-
-                            {/* Column 5: Status + Menu */}
-                            <div className="flex items-center justify-between space-x-2">
-                                <label className="flex items-center space-x-2 text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={!!task?.status}
-                                        onChange={() => handleTaskToggleStatus(task._id)}
-                                        className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                                    />
-                                    <span>{task.status ? "Done" : "Pending"}</span>
-                                </label>
-
-                                {/* Dropdown */}
                                 <div className="relative">
                                     <button
-                                        className="p-2 text-gray-400 hover:text-white"
-                                        onClick={() =>
-                                            setDropdownIndex(dropdownIndex === index ? null : index)
-                                        }
+                                        onClick={() => setDropdownIndex(dropdownIndex === index ? null : index)}
+                                        className="p-1.5 rounded-full hover:bg-gray-700 transition-colors"
                                     >
-                                        <FaEllipsisV />
+                                        <FaEllipsisV className="text-gray-400 hover:text-white text-sm" />
                                     </button>
 
                                     {dropdownIndex === index && (
-                                        <div className="absolute top-full right-0 bg-gray-700 rounded-lg shadow-lg w-44 mt-2 z-10">
+                                        <div className="absolute right-0 top-10 w-52 z-30 rounded-xl shadow-xl border border-gray-700 bg-[#1e1e2e] overflow-hidden backdrop-blur-sm transition-all duration-300">
                                             <button
-                                                onClick={() => (handleModify(task), setFormTaskID(task._id))}
-                                                className="block w-full px-4 py-2 text-white hover:bg-gray-600 text-left"
+                                                onClick={() => {
+                                                    handleModify(task);
+                                                    setFormTaskID(task._id);
+                                                }}
+                                                className="w-full text-left px-5 py-3 text-sm font-medium text-white hover:bg-[#313244] transition-colors"
                                             >
-                                                ✏️ Modify
+                                                Modify
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(task._id)}
-                                                className="block w-full px-4 py-2 text-red-500 hover:bg-gray-600 text-left"
+                                                className="w-full text-left px-5 py-3 text-sm font-medium text-red-400 hover:bg-[#3b2a2a] hover:text-red-300 transition-colors"
                                             >
-                                                🗑️ Delete
+                                                Delete
                                             </button>
                                             <button
-                                                onClick={() =>
-                                                    (handleAssignTeam(task._id), setFormTaskID(task._id))
-                                                }
-                                                className="block w-full px-4 py-2 text-white hover:bg-gray-600 text-left"
+                                                onClick={() => {
+                                                    handleAssignTeam(task._id);
+                                                    setFormTaskID(task._id);
+                                                }}
+                                                className="w-full text-left px-5 py-3 text-sm font-medium text-white hover:bg-[#313244] transition-colors"
                                             >
-                                                👥 Assign Team
+                                                Assign Team
                                             </button>
                                             <button
                                                 onClick={() => handleRemoveTeam(task._id)}
-                                                className="block w-full px-4 py-2 text-yellow-500 hover:bg-gray-600 text-left"
+                                                className="w-full text-left px-5 py-3 text-sm font-medium text-yellow-400 hover:bg-[#443c25] hover:text-yellow-300 transition-colors"
                                             >
-                                                ❌ Remove Team
+                                                Remove Team
                                             </button>
                                         </div>
                                     )}
+
                                 </div>
+                            </div>
+
+                            <div className="mt-6 space-y-2">
+                                <h2
+                                    className="text-lg font-bold cursor-pointer hover:text-blue-400 transition-colors"
+                                    onClick={() => getTaskDetails(task._id)}
+                                >
+                                    {task.task}
+                                </h2>
+
+                                <p className="text-sm text-gray-300 line-clamp-3">
+                                    Details : {task.details}
+                                </p>
+
+                                <p className="text-sm text-gray-400">
+                                    {task?.team?.name ? <span className="text-sm text-gray-300">Team : {task.team.name} </span> : <span className="italic text-gray-500">No Team Assigned</span>}
+                                </p>
+
+                                <p className="text-sm text-gray-400">
+                                    Deadline:{" "}
+                                    {task?.deadline?.slice(0, 10) || (
+                                        <span className="italic text-gray-500">No Deadline</span>
+                                    )}
+                                </p>
+                            </div>
+
+                            <div className="mt-4 text-right">
+                                <span
+                                    className={`text-sm font-semibold px-3 py-1 rounded-full ${task.status ? "bg-green-700 text-green-300" : "bg-yellow-700 text-yellow-300"
+                                        }`}
+                                >
+                                    {task.status ? "Done" : "Pending"}
+                                </span>
                             </div>
                         </div>
                     ))}
                 </div>
+
+
+
             </div>
-
-
-
-        </div>
+        </>
     );
 }
 

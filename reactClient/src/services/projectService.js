@@ -225,6 +225,55 @@ const getProjectOverview = async (projectId) => {
 
   }
 }
+
+const markProjectAsDone = async (projectId) => {
+  try {
+    const res = await fetch(`http://localhost:8080/api/projects/${projectId}/markProjectAsDone`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
+    return res.json()
+  } catch (error) {
+    console.log(error);
+
+  }
+}
+
+const markProjectAsNotDone = async (projectId) => {
+  try {
+    const res = await fetch(`http://localhost:8080/api/projects/${projectId}/markProjectAsNotDone`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
+    return res.json()
+  } catch (error) {
+    console.log(error);
+
+  }
+}
+
+const getProjectMembers = async (projectId) => {
+  try {
+    const res = await fetch(`http://localhost:8080/api/projects/${projectId}/getProjectMembers`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
+    return res.json()
+  } catch (error) {
+    console.log(error);
+
+  }
+}
+
 export {
   createProject,
   updateProject,
@@ -238,5 +287,8 @@ export {
   getMyProjects,
   getJoinedProjects,
   getAllProjects,
-  getProjectOverview
+  getProjectOverview,
+  markProjectAsDone,
+  markProjectAsNotDone,
+  getProjectMembers
 }

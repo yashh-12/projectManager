@@ -5,66 +5,66 @@ function TeamList({ teams, onClose }) {
   if (!team) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[9999] flex justify-center items-center">
-      <div className="bg-gray-900 text-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-8 relative">
-        {/* Close Button */}
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 text-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] w-full max-w-3xl max-h-[90vh] overflow-y-auto p-8 relative transition-all duration-300 animate-fade-in custom-scrollbar">
+
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-white text-2xl font-bold hover:text-red-500 focus:outline-none"
+          aria-label="Close"
+          className="absolute top-4 right-4 text-white text-3xl font-bold hover:text-red-500 transition-all duration-200"
         >
           &times;
         </button>
 
-        {/* Team Name Header */}
-        <h2 className="text-3xl font-extrabold mb-8 text-center border-b border-gray-700 pb-4">
+        <h2 className="text-4xl font-black mb-8 text-center border-b border-gray-700 pb-4 tracking-wide">
           {team.name}
         </h2>
 
-        {/* Team Members Section */}
-        <div className="mb-8">
-          <h3 className="text-2xl text-blue-400 font-bold mb-4">Team Members</h3>
-          {/* Header Row */}
-          <div className="grid grid-cols-2 gap-4 border-b border-gray-700 pb-2 mb-2">
-            <span className="font-semibold">Name/Username</span>
-            <span className="font-semibold">Email</span>
+        <section className="mb-12">
+          <h3 className="text-2xl text-blue-400 font-bold mb-4 uppercase tracking-wide">
+            Team Members
+          </h3>
+          <div className="grid grid-cols-2 gap-4 border-b border-gray-700 pb-3 mb-3 font-semibold text-gray-300 uppercase text-sm">
+            <span>Name / Username</span>
+            <span>Email</span>
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {team.team_members?.length > 0 ? (
-              team.team_members.map((member) => (
+              team.team_members.map(({ _id, name, username, email }) => (
                 <li
-                  key={member._id}
-                  className="grid grid-cols-2 gap-4 border-b border-gray-700 pb-2"
+                  key={_id}
+                  className="grid grid-cols-2 gap-4 items-center border-b border-gray-700 pb-2 hover:bg-gray-800/40 px-2 rounded-lg transition-colors duration-200"
                 >
-                  <span className="font-semibold">
-                    {member.name || member.username}
-                  </span>
-                  <span className="text-sm text-gray-400">{member.email}</span>
+                  <span className="font-medium text-white">{name || username}</span>
+                  <span className="text-sm text-gray-400">{email}</span>
                 </li>
               ))
             ) : (
               <li className="text-gray-400">No members</li>
             )}
           </ul>
-        </div>
+        </section>
 
-        {/* Assigned Tasks Section */}
-        <div>
-          <h3 className="text-2xl text-green-400 font-bold mb-4">Assigned Tasks</h3>
-          {/* Header Row */}
-          <div className="grid grid-cols-2 gap-4 border-b border-gray-700 pb-2 mb-2">
-            <span className="font-semibold">Task Name</span>
-            <span className="font-semibold">Deadline</span>
+        <section>
+          <h3 className="text-2xl text-green-400 font-bold mb-4 uppercase tracking-wide">
+            Assigned Tasks
+          </h3>
+          <div className="grid grid-cols-2 gap-4 border-b border-gray-700 pb-3 mb-3 font-semibold text-gray-300 uppercase text-sm">
+            <span>Task</span>
+            <span>Deadline</span>
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {team.assigned_tasks?.length > 0 ? (
-              team.assigned_tasks.map((task) => (
+              team.assigned_tasks.map(({ _id, task, deadline }) => (
                 <li
-                  key={task._id}
-                  className="grid grid-cols-2 gap-4 border-b border-gray-700 pb-2"
+                  key={_id}
+                  className="grid grid-cols-2 gap-4 items-center border-b border-gray-700 pb-2 hover:bg-gray-800/40 px-2 rounded-lg transition-colors duration-200"
                 >
-                  <span className="font-semibold">{task.task}</span>
+                  <span className="font-medium text-white">{task}</span>
                   <span className="text-sm text-gray-400">
-                    {new Date(task.deadline).toLocaleDateString()}
+                    {deadline
+                      ? new Date(deadline).toLocaleDateString()
+                      : 'No deadline'}
                   </span>
                 </li>
               ))
@@ -72,7 +72,7 @@ function TeamList({ teams, onClose }) {
               <li className="text-gray-400">No tasks</li>
             )}
           </ul>
-        </div>
+        </section>
       </div>
     </div>
   );

@@ -310,7 +310,6 @@ const getAssignedUsers = asyncHandler(async (req,res) => {
     
     const allUsers = users.filter(user => user !== null);
     
-    // console.log(allUsers);
     
     
 

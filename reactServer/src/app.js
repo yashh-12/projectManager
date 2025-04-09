@@ -4,8 +4,25 @@ import refreshAccessToken from "../middelware/refreshAceesToken.js";
 import expressServer from "../utils/expressServer.js";
 import authenticateUser from "../utils/auth.js";
 import apiResponse from "../utils/apiResponse.js";
+import {Server} from "socket.io"
+import {createServer} from "http"
 
 const app = expressServer();
+const http = createServer();
+const server = new Server(http,{
+  cors: true,
+  origins: ["http://localhost:5173"] 
+})
+
+server.on("connection", (client) => {
+  console.log(
+    `Client connected: ${client.id}`
+  );
+  client.on("connect",() => {
+    console.log("Client connected to the server");
+  })
+  
+})
 
 
 //import routes
@@ -13,12 +30,14 @@ import userRouter from "../routes/user.routes.js";
 import projectRouter from "../routes/project.routes.js";
 import taskRouter from "../routes/task.routes.js";
 import teamRouter from "../routes/team.routes.js";
+import chatRouter from "../routes/chat.routes.js";
 
 // routes
 app.use("/api/auth", userRouter);
 app.use("/api/projects", authenticateUser, projectRouter);
 app.use("/api/tasks", authenticateUser, taskRouter);
 app.use("/api/teams", authenticateUser, teamRouter);
+app.use("/api/chats", authenticateUser, chatRouter);
 
 
 //Home Route
@@ -54,4 +73,8 @@ if (connection) {
   app.listen(port, () => {
     console.log(`listening on ${port}`);
   });
+  http.listen(3000, () => {
+    console.log(`Socket.IO server running on port 8080`);
+  });
+  
 }

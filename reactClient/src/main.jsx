@@ -23,6 +23,8 @@ import ProjectOverview from './components/ProjectOverview.jsx'
 import Team from './components/Team.jsx'
 import teamLoader from './loaderFunctions/teamLoader.js'
 import overViewLoader from './loaderFunctions/overViewLoader.js'
+import Chat from './components/Chat.jsx'
+import { SocketProvider } from './provider/SocketProvider.jsx'
 
 
 
@@ -36,11 +38,12 @@ const router = createBrowserRouter(
       <Route path='/signup' element={<Signup />} />
       <Route path='/verify-email' element={<Verify />} />
       <Route path='/projects' loader={dashboardLoader} element={< ProjectLayout />}>
-        <Route index loader={dashboardLoader} element={<Overview />} /> 
+        <Route index loader={dashboardLoader} element={<Overview />} />
         <Route path=':projectId/' loader={dashboardLoader} element={<ProjectPage />} >
-        <Route path='overview' loader={overViewLoader}  element={<ProjectOverview />} /> 
-          <Route path='tasks' loader={taskLoader} element={<Task />} />  
-          <Route path='teams' loader={teamLoader} element={<Team/>} />  
+          <Route path='overview' loader={overViewLoader} element={<ProjectOverview />} />
+          <Route path='tasks' loader={taskLoader} element={<Task />} />
+          <Route path='teams' loader={teamLoader} element={<Team />} />
+          <Route path='chat' element={<Chat />} />
         </Route>
       </Route>
     </Route>
@@ -49,6 +52,8 @@ const router = createBrowserRouter(
 
 createRoot(document.getElementById('root')).render(
   <Provider store={store}>
-    <RouterProvider router={router} />
+    <SocketProvider>
+      <RouterProvider router={router} />
+    </SocketProvider>
   </Provider>
 )

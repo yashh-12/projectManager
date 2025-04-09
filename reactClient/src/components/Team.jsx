@@ -34,6 +34,15 @@ function Team() {
     setAllUsers(originalUsers.filter(user => user.name.toLowerCase().includes(searchText.toLowerCase() || '')))
   }, [searchText])
 
+  useEffect(() => {
+    if (assignMemberForm || removeMemberForm) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+  }, [assignMemberForm,removeMemberForm]);
+  
+
   const handleAddTeam = async (e) => {
     e.preventDefault();
     console.log('Team Added:', { teamName, projectId });
@@ -54,6 +63,7 @@ function Team() {
 
     if (res.success) {
       setAllTeams(allTeams.filter(team => team._id !== teamId));
+      setDropdownIndex(null)
     }
 
   };
@@ -115,7 +125,7 @@ function Team() {
       setRemoveMemberForm(false);
       setDropdownIndex(null);
       setAllUsers([])
-      
+
     }
   }
 
@@ -131,29 +141,43 @@ function Team() {
       </div>
 
       {addTeamForm && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-10">
-          <form onSubmit={handleAddTeam} className="bg-gray-800 p-6 rounded-lg shadow-xl w-96 space-y-4">
-            <h2 className="text-xl font-semibold text-white">Add New Team</h2>
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          {/* Lock background scroll */}
+          {document.body.classList.add("overflow-hidden")}
+          <form
+            onSubmit={handleAddTeam}
+            className="bg-gradient-to-br from-gray-800 to-gray-900 text-white p-6 rounded-2xl shadow-2xl w-full max-w-md space-y-5 border border-gray-700 custom-scrollbar"
+          >
+            <h2 className="text-2xl font-bold text-center text-white mb-4 border-b border-gray-600 pb-2">
+              Add New Team
+            </h2>
+
             <input
               type="text"
               placeholder="Team Name"
               value={teamName}
+              autoFocus
               onChange={(e) => setTeamName(e.target.value)}
-              className="p-3 border rounded-lg bg-gray-700 text-white w-full"
+              className="p-3 rounded-lg w-full bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
-            <div className="flex justify-between">
+
+            <div className="flex justify-end space-x-3 pt-2 border-t border-gray-700 mt-6">
               <button
                 type="button"
-                onClick={() => setAddTeamForm(false)}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg"
+                onClick={() => {
+                  setAddTeamForm(false);
+                  document.body.classList.remove("overflow-hidden");
+                  setTeamName('');
+                }}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded-lg"
+                className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition"
               >
-                Submit Team
+                Submit
               </button>
             </div>
           </form>
@@ -161,27 +185,32 @@ function Team() {
       )}
 
       {assignMemberForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 transition-opacity duration-300">
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-lg flex justify-center items-center px-4 py-10 overflow-y-auto">
+          {document.body.classList.add("overflow-hidden")}
           <form
             onSubmit={handleAssignForm}
-            className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl p-8 w-[90%] max-w-md max-h-[90vh] overflow-y-auto space-y-6 border border-zinc-200 dark:border-zinc-700"
+            className="w-full max-w-xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-zinc-200 dark:border-zinc-700 rounded-3xl shadow-[0_20px_60px_-10px_rgba(0,0,0,0.4)] p-8 space-y-6 transition-all duration-300 custom-scrollbar overflow-y-auto max-h-[90vh]"
           >
-
-            <h2 className="text-2xl font-bold text-center text-zinc-800 dark:text-white mb-6 tracking-tight">
-              Assign Members to Team
+            <h2 className="text-3xl font-bold text-center text-zinc-900 dark:text-white tracking-tight border-b pb-4 border-zinc-300 dark:border-zinc-700">
+              Assign Members
             </h2>
 
             <input
               type="text"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
+              placeholder="Search users..."
+              className="w-full p-3 text-sm rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
             />
 
-
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
               {allUsers.map((user) => (
-                <div key={user._id} className="flex items-center space-x-4">
+                <label
+                  key={user._id}
+                  htmlFor={user._id}
+                  className="flex items-center justify-between p-3 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition cursor-pointer"
+                >
+                  <span className="text-zinc-800 dark:text-zinc-200">{user.username}</span>
                   <input
                     type="checkbox"
                     id={user._id}
@@ -197,18 +226,11 @@ function Team() {
                     }}
                     className="accent-indigo-600 w-5 h-5 rounded focus:ring-2 focus:ring-indigo-400 transition"
                   />
-                  <label
-                    htmlFor={user._id}
-                    className="text-zinc-700 dark:text-zinc-300 text-base font-medium"
-                  >
-                    {user.username}
-                  </label>
-                </div>
+                </label>
               ))}
             </div>
 
-            {/* Buttons */}
-            <div className="flex justify-between pt-6 border-t border-zinc-300 dark:border-zinc-700">
+            <div className="flex justify-end space-x-4 pt-6 border-t border-zinc-300 dark:border-zinc-700">
               <button
                 type="button"
                 onClick={() => {
@@ -216,22 +238,25 @@ function Team() {
                   setDropdownIndex(null);
                   setSelectedUsers([]);
                   setSelectedTeam(null);
+                  setSearchText("")
+                  document.body.classList.remove("overflow-hidden");
                 }}
-                className="px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-white hover:bg-zinc-300 dark:hover:bg-zinc-600 transition"
+                className="px-5 py-2 rounded-xl bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-white hover:bg-zinc-300 dark:hover:bg-zinc-600 transition"
               >
                 Cancel
               </button>
 
               <button
                 type="submit"
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
+                className="px-5 py-2 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
               >
-                Assign Members
+                Assign
               </button>
             </div>
           </form>
         </div>
       )}
+
 
       {removeMemberForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 transition-opacity duration-300">
@@ -314,17 +339,23 @@ function Team() {
 
 
 
-      <div className="w-full bg-gray-800 p-6 rounded-lg">
-        <div className="grid grid-cols-2 gap-4 p-4 font-semibold bg-gray-700 rounded-lg mb-4">
+      <div className="w-full bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-700">
+        <div className="grid grid-cols-2 gap-4 p-4 font-semibold bg-gray-800 rounded-xl mb-6 text-white">
           <div>Team Name</div>
-          <div>Actions</div>
+          <div className="text-right">Actions</div>
         </div>
 
         <div className="space-y-4">
           {allTeams.length > 0 && allTeams.map((team, index) => (
-            <div key={index} className="border border-gray-700 p-4 rounded-lg flex items-center relative">
-              <div className="flex-1">
-                <h3 className="text-lg font-medium" onClick={() => showDetails(team._id)} >{team.name}</h3>
+            <div
+              key={index}
+              className="bg-gray-800 hover:bg-gray-700 transition-colors duration-200 border border-gray-600 p-4 rounded-xl flex items-center justify-between relative text-white"
+            >
+              <div
+                className="flex-1 cursor-pointer hover:underline"
+                onClick={() => showDetails(team._id)}
+              >
+                <h3 className="text-lg font-semibold">{team.name}</h3>
               </div>
 
               <button
@@ -335,22 +366,22 @@ function Team() {
               </button>
 
               {dropdownIndex === index && (
-                <div className="absolute top-10 right-0 bg-gray-700 rounded-lg shadow-lg w-40 z-10">
+                <div className="absolute top-12 right-4 bg-gray-800 border border-gray-700 rounded-lg shadow-lg w-44 z-10 overflow-hidden">
                   <button
                     onClick={() => handleAssignMember(team._id)}
-                    className="block w-full px-4 py-2 text-white hover:bg-gray-600"
+                    className="w-full text-left px-4 py-2 hover:bg-gray-700 transition-colors"
                   >
                     Assign Member
                   </button>
                   <button
                     onClick={() => handleRemoveMember(team._id)}
-                    className="block w-full px-4 py-2 text-yellow-500 hover:bg-gray-600"
+                    className="w-full text-left px-4 py-2 text-yellow-400 hover:bg-gray-700 transition-colors"
                   >
                     Remove Member
                   </button>
                   <button
                     onClick={() => handleDelete(team._id)}
-                    className="block w-full px-4 py-2 text-red-500 hover:bg-gray-600"
+                    className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-700 transition-colors"
                   >
                     Delete
                   </button>
@@ -360,6 +391,7 @@ function Team() {
           ))}
         </div>
       </div>
+
     </div>
   );
 }
