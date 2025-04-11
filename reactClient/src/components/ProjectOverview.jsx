@@ -1,15 +1,77 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLoaderData, useParams, useNavigate } from 'react-router-dom';
 import { FaTasks, FaCheckCircle, FaUsers, FaLayerGroup } from 'react-icons/fa';
 import { markProjectAsDone, markProjectAsNotDone, toggleIsCompleted } from '../services/projectService';
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import format from 'date-fns/format';
+import parse from 'date-fns/parse';
+import startOfWeek from 'date-fns/startOfWeek';
+import getDay from 'date-fns/getDay';
+import enUS from 'date-fns/locale/en-US'
+import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { modifyDeadline } from '../services/taskService';
+
+
+const locales = {
+  'en-US': enUS,
+};
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
 
 function ProjectOverview() {
   // const data = useLoaderData()?.data;
-  const {overviewData,allTasks} = useLoaderData();
+  const { overviewData, allTasks } = useLoaderData();
   const data = overviewData.data
+  const DragAndDropCalendar = withDragAndDrop(Calendar);
 
-  console.log("over ",allTasks);
-  
+
+  console.log("over ", allTasks);
+
+  const initialEvents = allTasks.data.map((task) => {
+    const date = new Date(task.deadline);
+    return {
+      id: task._id,
+      title: task.task,
+      allDay: true,
+      start: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
+      end: new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1)
+    };
+  });
+
+  const [events, setEvents] = useState(initialEvents);
+
+  const handleEventDrop = async ({ event, start, end }) => {
+    try {
+      const updatedDate = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      
+
+      const res = await modifyDeadline(event.id, updatedDate)
+
+      if (res?.success) {
+
+        const updatedEvents = events.map((ev) =>
+          ev.id === event.id
+            ? { ...ev, start: updatedDate, end: new Date(updatedDate.getFullYear(), updatedDate.getMonth(), updatedDate.getDate()) }
+            : ev
+        );
+
+        setEvents(updatedEvents);
+
+      }
+    } catch (error) {
+      console.error("Failed to move event:", error);
+    }
+  };
+
+
   const { projectId } = useParams();
   const navigate = useNavigate();
 
@@ -102,6 +164,35 @@ function ProjectOverview() {
           </div>
         ))}
       </div>
+
+      <h2 className="text-lg font-semibold text-white mt-12 mb-4">Calendar</h2>
+
+      <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
+        <DragAndDropCalendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          defaultView="month"
+          views={['month']}
+          onEventDrop={handleEventDrop}
+          className="text-white"
+          style={{ height: '600px' }}
+          eventPropGetter={() => ({
+            className: 'bg-blue-600 text-white px-2 py-1 rounded-md text-sm',
+          })}
+          dayPropGetter={() => ({
+            className: 'border border-gray-700',
+            style: {
+              backgroundColor: '#1f2937',
+              color: '#e5e7eb',
+            },
+          })}
+        />
+
+      </div>
+
+
     </div>
   );
 }

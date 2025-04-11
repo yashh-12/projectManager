@@ -27,7 +27,6 @@ const taskSchema = new Schema(
         deadline: {
             type: Date,
             default: Date.now(),
-            trim: true
         }
     },
     { timestamps: true }

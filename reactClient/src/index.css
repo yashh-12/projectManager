@@ -1,1 +1,67 @@
 @import "tailwindcss";
+
+
+.rbc-calendar {
+    background-color: transparent;
+    color: white;
+  }
+  
+  .rbc-month-view {
+    border-color: #374151 !important; /* Tailwind bg-gray-700 */
+  }
+  
+  .rbc-day-bg {
+    background-color: #1f2937 !important; /* Tailwind bg-gray-800 */
+    border-color: #374151 !important; /* Tailwind border */
+  }
+  
+  .rbc-off-range-bg {
+    background-color: #111827 !important; /* Tailwind bg-gray-900 */
+  }
+  
+  /* Event cells */
+  .rbc-event {
+    background-color: #2563eb !important; /* Tailwind blue-600 */
+    color: white !important;
+    padding: 0.25rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Header text */
+  .rbc-header {
+    background-color: #1f2937 !important; /* Tailwind bg-gray-800 */
+    border-color: #374151 !important;
+    color: #f9fafb !important; /* Tailwind text-gray-100 */
+  }
+  
+  /* Time gutter and borders */
+  .rbc-time-content {
+    border-top-color: #374151 !important;
+  }
+  
+  /* Navigation buttons (Today, Back, Next) */
+  .rbc-toolbar button {
+    background-color: #1f2937 !important;
+    color: white !important;
+    border: 1px solid #374151 !important;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    margin: 0 0.25rem;
+  }
+  
+  .rbc-toolbar button:hover {
+    background-color: #111827 !important;
+  }
+  
+  .rbc-toolbar-label {
+    color: #facc15 !important; /* Tailwind yellow-400 */
+    font-weight: bold;
+  }
+  
+  /* Active view button */
+  .rbc-active {
+    background-color: #2563eb !important;
+    color: white !important;
+  }
+  

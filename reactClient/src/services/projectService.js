@@ -228,7 +228,7 @@ const getProjectOverview = async (projectId) => {
 
 const markProjectAsDone = async (projectId) => {
   try {
-    const res = await fetch(`http://localhost:8080/api/projects/${projectId}/markProjectAsDone`, {
+    const res = await fetch(`http://localhost:8080/api/projects/${projectId}/markAsCompleted`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -244,7 +244,7 @@ const markProjectAsDone = async (projectId) => {
 
 const markProjectAsNotDone = async (projectId) => {
   try {
-    const res = await fetch(`http://localhost:8080/api/projects/${projectId}/markProjectAsNotDone`, {
+    const res = await fetch(`http://localhost:8080/api/projects/${projectId}/markAsIncomplete`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

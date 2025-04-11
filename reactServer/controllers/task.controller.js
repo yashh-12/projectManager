@@ -109,16 +109,12 @@ const assignTaskToTeam = asyncHandler(async (req, res) => {
 })
 
 const removeTeam = asyncHandler(async (req, res) => {
-    // console.log("came");
 
     const { taskId } = req.params
-    // const { teamId } = req.body
     if (!isValidObjectId(taskId)) {
         throw new apiError(400, "Invalid task ID")
     }
-    // if (!isValidObjectId(teamId)) {
-    //     throw new apiError(400, "Invalid team ID")
-    // }
+   
     const task = await Task.findByIdAndUpdate(taskId, {
         $set: {
             assign: null
@@ -267,6 +263,28 @@ const toggleTaskStatus = asyncHandler(async (req, res) => {
     return res.status(200).json(new apiResponse(200, task, "Task status toggled"));
 });
 
+const modifyTaskDeadline = asyncHandler(async(req,res) => {
+    const {taskId} = req.params
+    if (!isValidObjectId(taskId)) {
+        throw new apiError(500,"Taskid is invalid")
+
+    }
+    const {newDeadline} = req.body;
+
+    const task = await Task.findById(taskId);
+    if (!task) {
+        throw new apiError(500,"Task not found")
+    }
+
+    task.deadline = newDeadline;
+    const newTask = await task.save()
+
+    if(!newTask){
+        throw new apiError(500,"updation Failed")
+    }
+
+    return res.status(200).json(new apiResponse(200,newTask,"successfully modified"))
+})
 export {
     createNewTask,
     removeATask,
@@ -275,4 +293,5 @@ export {
     modifyTask,
     getTaskData,
     toggleTaskStatus,
+    modifyTaskDeadline
 }

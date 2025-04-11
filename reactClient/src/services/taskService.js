@@ -129,6 +129,27 @@ const toggleTaskStatus = async (taskId) => {
     }
 }
 
+const modifyDeadline = async(taskId,newDeadline) => {
+    try {
+        const res = await fetch(`http://localhost:8080/api/tasks/${taskId}/newDeadline`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body:JSON.stringify({
+                newDeadline : new Date(newDeadline.getFullYear(), newDeadline.getMonth(), newDeadline.getDate(), 12, 0, 0)
+
+            })
+        })
+
+        return res.json()
+    } catch (error) {
+        console.log(error);
+
+    }
+}
+
 export {
     addTask,
     deleteTask,
@@ -137,4 +158,5 @@ export {
     removeATeam,
     getTaskData,
     toggleTaskStatus,
+    modifyDeadline
 }

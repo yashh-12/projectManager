@@ -7,10 +7,11 @@ import { FaEllipsisV, FaSadCry } from 'react-icons/fa';
 import { getAllTasks, getAllTeams } from "../services/projectService.js"
 import TaskDetail from './TaskDetail.jsx';
 import FlashMsg from './FlashMsg.jsx';
+import useSocket from '../provider/SocketProvider.jsx';
 
 function Task() {
 
-    const dispatch = useDispatch();
+
     const [addTaskForm, setAddTaskForm] = useState(false);
     const [taskName, setTaskName] = useState('');
     const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -33,15 +34,10 @@ function Task() {
     const [formTaskId, setFormTaskID] = useState(null)
     const [allTasks, setAllTasks] = useState(tasks?.data || [])
     const [modifyForm, setModifyForm] = useState(false)
-    // const [modifyTask, setModifyTask] = useState({})
-    const [isThereLoaderData, setIsThereLoaderData] = useState(true)
     const [originalTeam, setOriginalTeam] = useState([])
     const [searchText, setSearchText] = useState("")
     const [notification, setNotification] = useState("")
 
-    useEffect(() => {
-        setAllTeams(originalTeam.filter(team => team.name.toLowerCase().includes(searchText.toLowerCase() || '')))
-    }, [searchText])
 
     useEffect(() => {
         if (assignForm) {
@@ -50,8 +46,6 @@ function Task() {
             document.body.classList.remove("overflow-hidden");
         }
     }, [assignForm]);
-
-
 
     const handleAddTask = async (e) => {
         e.preventDefault();
@@ -134,7 +128,6 @@ function Task() {
         if (res.success) {
             console.log('Task assigned successfully:', res);
             setAssignForm(false);
-            console.log(selectedTeamName);
             setAllTasks(allTasks.map(task =>
                 task._id === formTaskId ? { ...task, team: { _id: selectedTeam, name: selectedTeamName } } : task
             ));
@@ -202,24 +195,17 @@ function Task() {
         <>
             {notification && <FlashMsg message={notification} setMessage={() => setNotification("")} />}
             <div className="relative flex flex-col space-y-4 w-full">
-                <div className="flex justify-between items-center mb-4">
-                    <h1 className="text-2xl font-bold text-white">Your Tasks</h1>
 
-                    <div className="flex gap-3">
-                        <button
-                            className="bg-purple-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-purple-700 transition-transform transform hover:scale-105"
-                        >
-                            Filter
-                        </button>
-
-                        <button
-                            onClick={() => setAddTaskForm(!addTaskForm)}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-transform transform hover:scale-105"
-                        >
-                            + Add Task
-                        </button>
-                    </div>
+                <div className="mb-4 flex justify-end">
+                    <button
+                        onClick={() => setAddTaskForm(!addTaskForm)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-transform transform hover:scale-105"
+                    >
+                        + Add Task
+                    </button>
                 </div>
+
+
 
 
                 {addTaskForm && (
