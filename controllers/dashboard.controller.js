@@ -5,6 +5,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 
 import apiResponse from "../utils/apiResponse.js";
 import apiError from "../utils/apiError.js";
+import { json } from "express";
 
 const getUserDashboard = asyncHandler(async (req, res) => {
     const userId = req.user._id
@@ -241,10 +242,16 @@ const getOrganizationDashboard = asyncHandler(async (req, res) => {
     const userId = req.user._id
     const orgId = req.user.organization
 
-    if(!isValidObjectId(userId) || !isValidObjectId(orgId)){
+    if(!orgId){
+      return res
+      .status(400)
+      .json(new apiError(400, "User doesn't have an organization"))
+    }
+
+    if(!isValidObjectId(orgId)){
         return res
         .status(400)
-        .json(new apiError(400, "invalid ids"))
+        .json(new apiError(400, "invalid org id"))
     }
 
     const organization = await Organization.aggregate(
