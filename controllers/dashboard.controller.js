@@ -1,12 +1,10 @@
 import mongoose, { isValidObjectId } from "mongoose";
-import User from "../models/user.model";
-import Organization from "../models/organization.model"
-import asyncHandler from "../utils/asyncHandler";
-import Project from "../models/project.model";
+import User from "../models/user.model.js";
+import Organization from "../models/organization.model.js"
+import asyncHandler from "../utils/asyncHandler.js";
 
-import apiResponse from "../utils/apiResponse";
-import apiError from "../utils/apiError";
-import { json } from "express";
+import apiResponse from "../utils/apiResponse.js";
+import apiError from "../utils/apiError.js";
 
 const getUserDashboard = asyncHandler(async (req, res) => {
     const userId = req.user._id
@@ -15,7 +13,7 @@ const getUserDashboard = asyncHandler(async (req, res) => {
         [
             {
               $match: {
-                _id: mongoose.Types.ObjectId(userId),
+                _id: new mongoose.Types.ObjectId(userId),
               },
             },
           
@@ -234,7 +232,7 @@ const getUserDashboard = asyncHandler(async (req, res) => {
     .status(200)
     .json(new apiResponse(
         200,
-        userdata,
+        userdata.length?userdata[0]:{},
         "User's dashboard"
     ))
 })
@@ -253,7 +251,7 @@ const getOrganizationDashboard = asyncHandler(async (req, res) => {
         [
             {
                 $match: {
-                    _id: mongoose.Types.ObjectId(orgId),
+                    _id: new mongoose.Types.ObjectId(orgId),
                 },
             },
             {
@@ -547,7 +545,7 @@ const getOrganizationDashboard = asyncHandler(async (req, res) => {
         .status(200)
         .json(new apiResponse(
             200,
-            organization,
+            organization.length?organization[0]:{},
             "User's organization dashboard"
         ))
 })
