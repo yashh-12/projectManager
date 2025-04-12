@@ -12,11 +12,13 @@ const app = expressServer();
 import userRouter from "../routes/user.routes.js";
 import projectRouter from "../routes/project.routes.js";
 import organizationRouter from "../routes/organization.routes.js";
+import dashboardRouter from "../routes/dashboard.routes.js";
 
 // routes
 app.use("/api/auth", userRouter);
 app.use("/api/org", authenticateUser, projectRouter);
 app.use("/api/organization", authenticateUser, organizationRouter);
+app.use("/api/dashboard",authenticateUser, dashboardRouter)
 
 
 //Home Route
