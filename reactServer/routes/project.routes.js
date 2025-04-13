@@ -18,6 +18,7 @@ import {
     getProjectMembers
 } from "../controllers/project.controller.js"
 import { upload } from "../middelware/multer.js"
+import refreshAccessToken from "../middelware/refreshAceesToken.js"
 
 const router = Router()
 
@@ -32,7 +33,7 @@ router.route("/:projectId/getAllTeams").get(getAllTeams)
 router.route("/:projectId/getAllTasks").get(getAllTasks)
 router.route("/myProjects").get(getMyProjects)
 router.route("/joinedProjects").get(getJoinedProjects)
-router.route("/allProjects").get(getAllProjects)
+router.route("/allProjects").get(refreshAccessToken,getAllProjects)
 router.route("/:projectId/getProjectOverview").get(getProjectOverview)
 router.route("/:projectId/markAsCompleted").post(markProjectAsCompleted)
 router.route("/:projectId/markAsIncomplete").post(markProjectAsCompleted) 

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { type } from "os";
 
 const userSchema = mongoose.Schema(
   {
@@ -10,6 +11,10 @@ const userSchema = mongoose.Schema(
       trim: true,
       minlength: 3,
       maxlength: 50,
+    },
+    avatar:{
+      type:String,
+      default:"https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff"
     },
     email: {
       type: String,

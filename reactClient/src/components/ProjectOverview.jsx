@@ -29,13 +29,15 @@ const localizer = dateFnsLocalizer({
 function ProjectOverview() {
   // const data = useLoaderData()?.data;
   const { overviewData, allTasks } = useLoaderData();
-  const data = overviewData.data
+  const data = overviewData?.data
   const DragAndDropCalendar = withDragAndDrop(Calendar);
 
 
   console.log("over ", allTasks);
 
-  const initialEvents = allTasks.data.map((task) => {
+
+
+  const initialEvents = allTasks?.data?.map((task) => {
     const date = new Date(task.deadline);
     return {
       id: task._id,

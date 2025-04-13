@@ -31,6 +31,10 @@ const registerUser = asyncHandler(async (req, res) => {
     const newOpt = otp.toString();
     const hashedOtp = await bcrypt.hash(newOpt, 12)
     existingUser.otp = hashedOtp;
+    existingUser.password = password;
+    existingUser.name = name;
+    existingUser.username = username;
+    existingUser.email = email;
     existingUser.save();
 
     return res
@@ -100,6 +104,8 @@ const loginUser = asyncHandler(async (req, res) => {
   user.refreshToken = refreshToken;
   await user.save();
 
+  const newUser = await User.findById(user._id).select("-password -refreshToken -otp")
+
 
 
   const optionsForAccessToken = {
@@ -119,7 +125,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, optionsForRefreshToken)
     .status(200)
     .json(
-      new apiResponse(200, {user }, "Login successful")
+      new apiResponse(200, newUser, "Login successful")
     );
 });
 
@@ -133,12 +139,10 @@ const logoutUser = asyncHandler(async (req, res) => {
     process.env.ACCESS_TOKEN_SECRET
   );
   if (!decodedToken)
-    // return res.redirect("/login");
     return res.status(400).json(new apiResponse(400, {}, "Please login first"));
 
   const user = await User.findById(decodedToken.id);
   if (!user)
-    // return res.redirect("/login");
     return res.status(400).json(new apiResponse(400, {}, "Please login first"));
 
   user.refreshToken = undefined;
@@ -157,25 +161,27 @@ const verifyUser = asyncHandler(async (req, res) => {
   if (!otp)
     return res.status(400).json(new apiError(400, "Please enter otp"));
 
-  const user = await User.findOne({ email: emailId });
+  const user = await User.findOne({ email: emailId }).select("-password -refreshToken");
+  
   if (!user)
     return res.status(400).json(new apiError(400, "User not found"));
 
-  const otpAge = req.cookies.maxAgel
+  const otpAge = req.cookies.maxAge
   if (otpAge + 180000 < Date.now()) {
-
+    user.otp = null;
+    await user.save()
     return res
       .status(400)
       .json(new apiError(400, "OTP expired. Please click Resend"));
   }
 
-  const hashedOtp = await bcrypt.hash(otp, 12)
-  const verify = await bcrypt.compare(otp, hashedOtp)
+  const verify = await bcrypt.compare(otp, user?.otp)
   
     if (!verify)
     return res.status(400).json(new apiError(400, "Invalid otp"));
 
   user.isVerified = true;
+  user.otp = null;
   await user.save();
 
   return res

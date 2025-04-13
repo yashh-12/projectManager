@@ -18,7 +18,7 @@ function Login() {
     const res = await login(usernameOrEmail, password);
     console.log(res);
     if (res.success) {
-      dispatch(dispatchLogin());
+      dispatch(dispatchLogin(res?.data));
       dispatch(setMessage("Logged in successfully"));
       navigate("/projects");
       dispatch(setLoaderFalse());

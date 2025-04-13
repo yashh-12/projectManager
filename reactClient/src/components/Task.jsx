@@ -38,6 +38,14 @@ function Task() {
     const [searchText, setSearchText] = useState("")
     const [notification, setNotification] = useState("")
 
+    const userData = useSelector(state => state?.auth?.userData)
+    console.log(userData);
+
+    const isProjectOwner = userData?._id == allTasks[0]?.project?.owner;
+
+    console.log("owner ", isProjectOwner);
+
+
 
     useEffect(() => {
         if (assignForm) {
@@ -196,14 +204,14 @@ function Task() {
             {notification && <FlashMsg message={notification} setMessage={() => setNotification("")} />}
             <div className="relative flex flex-col space-y-4 w-full">
 
-                <div className="mb-4 flex justify-end">
+                {isProjectOwner && <div className="mb-4 flex justify-end">
                     <button
                         onClick={() => setAddTaskForm(!addTaskForm)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-transform transform hover:scale-105"
                     >
                         + Add Task
                     </button>
-                </div>
+                </div>}
 
 
 
@@ -419,12 +427,12 @@ function Task() {
 
 
                                 <div className="relative">
-                                    <button
+                                    {isProjectOwner && <button
                                         onClick={() => setDropdownIndex(dropdownIndex === index ? null : index)}
                                         className="p-1.5 rounded-full hover:bg-gray-700 transition-colors"
                                     >
                                         <FaEllipsisV className="text-gray-400 hover:text-white text-sm" />
-                                    </button>
+                                    </button>}
 
                                     {dropdownIndex === index && (
                                         <div className="absolute right-0 top-10 w-52 z-30 rounded-xl shadow-xl border border-gray-700 bg-[#1e1e2e] overflow-hidden backdrop-blur-sm transition-all duration-300">

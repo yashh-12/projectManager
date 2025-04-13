@@ -12,75 +12,77 @@ import mongoose, { isValidObjectId } from "mongoose";
  * @description Utility function which returns the pipeline stages to fetch the team data object ( { name ( type : string ), project ( type : mongoose.ObjectId ), team_members ( type : Array ( [ Object ( { _id ( type : mongoose.ObjectId ), name ( type : string ), username ( type : string ), email ( type : string ), avatar ( type : Object ) } ) ] ) ) } )
  * @returns {mongoose.PipelineStage[]}
  */
-const commonTeamDataPipeline = (teamId) => (
-    [
-        {
-            $match: {
-                _id: new mongoose.Types.ObjectId(teamId)
-            }
-        },
-        {
-            $lookup: {
-                from: "teammemberships",
-                foreignField: "teamID",
-                localField: "_id",
-                as: "team_members",
-                pipeline: [
-                    {
-                        $lookup: {
-                            from: "users",
-                            foreignField: "_id",
-                            localField: "member",
-                            as: "userdata"
-                        }
-                    },
-                    {
-                        $addFields: {
-                            userdata: {
-                                $arrayElemAt: ["$userdata", 0]
-                            }
-                        }
-                    },
-                    {
-                        $addFields: {
-                            _id: "$userdata._id",
-                            name: "$userdata.name",
-                            email: "$userdata.email",
-                            username: "$userdata.username",
-                            // avatar:"$userdata.avatar"    //todo
-                        }
-                    },
-                    {
-                        $project: {
-                            _id: 1,
-                            name: 1,
-                            username: 1,
-                            email: 1,
-                            // avatar:1     //todo
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            $lookup: {
-                from: "tasks",
-                foreignField: "assign",
-                localField: "_id",
-                as: "assigned_tasks",
-                pipeline: [
-                    {
-                        $project: {
-                            task: 1,
-                            details: 1,
-                            deadline: 1
-                        }
-                    }
-                ]
-            }
+const commonTeamDataPipeline = (teamId) => [
+    {
+        $match: {
+            _id: new mongoose.Types.ObjectId(teamId)
         }
-    ]
-)
+    },
+    {
+        $lookup: {
+            from: "projects",
+            localField: "project",
+            foreignField: "_id",
+            as: "project"
+        }
+    },
+    {
+        $addFields: {
+            project: { $arrayElemAt: ["$project", 0] }
+        }
+    },
+    {
+        $lookup: {
+            from: "teammemberships",
+            localField: "_id",
+            foreignField: "teamID",
+            as: "team_members",
+            pipeline: [
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "member",
+                        foreignField: "_id",
+                        as: "userdata"
+                    }
+                },
+                {
+                    $addFields: {
+                        userdata: { $arrayElemAt: ["$userdata", 0] }
+                    }
+                },
+                {
+                    $project: {
+                        _id: "$userdata._id",
+                        name: "$userdata.name",
+                        email: "$userdata.email",
+                        username: "$userdata.username"
+                        // avatar: "$userdata.avatar" // Uncomment when you support it
+                    }
+                }
+            ]
+        }
+    },
+    {
+        $lookup: {
+            from: "tasks",
+            localField: "_id",
+            foreignField: "assign",
+            as: "assigned_tasks",
+            pipeline: [
+                {
+                    $project: {
+                        task: 1,
+                        details: 1,
+                        deadline: 1
+                    }
+                }
+            ]
+        }
+    }
+];
+
+
 
 const createNewTeam = asyncHandler(async (req, res) => {
     const { projectId } = req.params
@@ -198,7 +200,7 @@ const addTeamMembers = asyncHandler(async (req, res) => {
 
     const existingMembers = await TeamMembership.find({ teamID: teamId, member: { $in: members } })
     const existingMembersIds = existingMembers.map((member) => member.member.toString())
-    const membersToAdd = members.filter((member) =>!existingMembersIds.includes(member.toString()))
+    const membersToAdd = members.filter((member) => !existingMembersIds.includes(member.toString()))
 
     if (membersToAdd.length > 0) {
         membersToAdd.forEach(async (member) => {
@@ -211,7 +213,7 @@ const addTeamMembers = asyncHandler(async (req, res) => {
         })
     }
 
-  
+
 
     const team = await Team.aggregate(
         commonTeamDataPipeline(teamId)
@@ -299,22 +301,22 @@ const getAllUnassignedUsers = asyncHandler(async (req, res) => {
     res.status(200).json(new apiResponse(200, users, "All unassigned users"));
 });
 
-const getAssignedUsers = asyncHandler(async (req,res) => {
-    const {teamId} = req.params;
+const getAssignedUsers = asyncHandler(async (req, res) => {
+    const { teamId } = req.params;
 
-    const allAssignedUsers = await TeamMembership.find({teamID:teamId})
+    const allAssignedUsers = await TeamMembership.find({ teamID: teamId })
 
     const users = await Promise.all(
         allAssignedUsers.map(member => User.findById(member.member))
     );
-    
-    const allUsers = users.filter(user => user !== null);
-    
-    
-    
 
-    return res.status(200).json(new apiResponse(200,allUsers,"all Assigned Members"))
-    
+    const allUsers = users.filter(user => user !== null);
+
+
+
+
+    return res.status(200).json(new apiResponse(200, allUsers, "all Assigned Members"))
+
 })
 
 

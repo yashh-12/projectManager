@@ -255,7 +255,7 @@ const getAllTeams = asyncHandler(async (req, res) => {
         project: new mongoose.Types.ObjectId(projectId)
       }
     },
-    // Join with the projects collection to get the project owner
+    // Join with projects to get project data
     {
       $lookup: {
         from: "projects",
@@ -265,7 +265,8 @@ const getAllTeams = asyncHandler(async (req, res) => {
       }
     },
     { $unwind: "$project" },
-    // Join with teammemberships to get membership docs for each team
+  
+    // Join with teammemberships to get membership docs
     {
       $lookup: {
         from: "teammemberships",
@@ -274,7 +275,8 @@ const getAllTeams = asyncHandler(async (req, res) => {
         as: "memberships"
       }
     },
-    // Join with users to populate team_members from memberships
+  
+    // Join with users to populate team_members
     {
       $lookup: {
         from: "users",
@@ -292,7 +294,33 @@ const getAllTeams = asyncHandler(async (req, res) => {
         as: "team_members"
       }
     },
-    // Filter teams: show if current user is either the project owner OR a member of the team
+  
+    // Join with tasks to get assigned tasks
+    {
+      $lookup: {
+        from: "tasks",
+        let: { teamId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$assign", "$$teamId"] }
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              task: 1,
+              details: 1,
+              deadline: 1,
+              status: 1
+            }
+          }
+        ],
+        as: "assigned_tasks"
+      }
+    },
+  
+    // Filter: Only show teams where user is project owner or team member
     {
       $match: {
         $or: [
@@ -301,15 +329,25 @@ const getAllTeams = asyncHandler(async (req, res) => {
         ]
       }
     },
-    // Final projection
+  
+    // Final result structure
     {
       $project: {
         _id: 1,
         name: 1,
-        team_members: 1
+        team_members: 1,
+        assigned_tasks: 1,
+        project: {
+          _id: 1,
+          name: 1,
+          owner: 1,
+          deadline: 1,
+          isCompleted: 1
+        }
       }
     }
   ]);
+  
 
   return res
     .status(200)
@@ -405,8 +443,6 @@ const getAllTasks = asyncHandler(async (req, res) => {
     new apiResponse(200, tasks, "Filtered tasks where user is project owner or team member")
   );
 });
-
-
 
 const getMyProjects = asyncHandler(async (req, res) => {
   const projects = await Project.find({
@@ -673,7 +709,7 @@ const getProjectMembers = asyncHandler(async (req, res) => {
           $filter: {
             input: "$userIds",
             as: "uid",
-            cond: { $ne: ["$$uid", currentUserId] }, // exclude current user
+            cond: { $ne: ["$$uid", currentUserId] }, 
           },
         },
       },
@@ -693,7 +729,6 @@ const getProjectMembers = asyncHandler(async (req, res) => {
       $unwind: "$userDetails",
     },
 
-    // 🔥 Group by user _id to eliminate duplicates
     {
       $group: {
         _id: "$userDetails._id",

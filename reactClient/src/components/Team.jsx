@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLoaderData, useParams } from 'react-router-dom';
 import { assignMemberToTeam, createTeam, deleteTeam, getAllAssignedUsers, getTeamData, removeMemberToTeam } from '../services/teamService.js';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setLoaderTrue, setLoaderFalse } from '../store/uiSlice.js';
 import { FaEllipsisV } from 'react-icons/fa';
 import { getAllTeams } from '../services/projectService.js';
@@ -15,12 +15,18 @@ function Team() {
   const [teamName, setTeamName] = useState('');
   const { projectId } = useParams();
   const aTeams = useLoaderData();
-  // console.log(allTeams);
+  console.log(aTeams);
+
+  const userData = useSelector(state => state?.auth?.userData)
+  const isProjectOwner = userData?._id == aTeams?.data[0]?.project?.owner;
+
+  console.log(isProjectOwner);
+
+
   const [assignMemberForm, setAssignMemberForm] = useState(false);
   const [removeMemberForm, setRemoveMemberForm] = useState(false);
 
   const [allTeams, setAllTeams] = useState(aTeams?.data || []);
-  const [isThereLoaderData, setIsThereLoaderData] = useState(true)
   const [allUsers, setAllUsers] = useState([])
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [dropdownIndex, setDropdownIndex] = useState(null);
@@ -31,7 +37,7 @@ function Team() {
   const [originalUsers, setOriginalUsers] = useState([])
 
   useEffect(() => {
-    setAllUsers(originalUsers.filter(user => user.name.toLowerCase().includes(searchText.toLowerCase() || '')))
+    setAllUsers(originalUsers.filter(user => user?.name?.toLowerCase().includes(searchText.toLowerCase() || '')))
   }, [searchText])
 
   useEffect(() => {
@@ -40,14 +46,14 @@ function Team() {
     } else {
       document.body.classList.remove("overflow-hidden");
     }
-  }, [assignMemberForm,removeMemberForm]);
-  
+  }, [assignMemberForm, removeMemberForm]);
+
 
   const handleAddTeam = async (e) => {
     e.preventDefault();
     console.log('Team Added:', { teamName, projectId });
     const res = await createTeam(projectId, teamName);
-    if (res.success) {
+    if (res?.success) {
       console.log('Team added successfully:', res.data);
       setAddTeamForm(false);
       setTeamName('');
@@ -61,7 +67,7 @@ function Team() {
     const res = await deleteTeam(teamId);
     console.log(res);
 
-    if (res.success) {
+    if (res?.success) {
       setAllTeams(allTeams.filter(team => team._id !== teamId));
       setDropdownIndex(null)
     }
@@ -73,9 +79,9 @@ function Team() {
     const res = await getUnassignedUsers(teamId);
     console.log(res);
 
-    if (res.success) {
-      setAllUsers(res.data ?? []);
-      setOriginalUsers(res.data ?? [])
+    if (res?.success) {
+      setAllUsers(res?.data ?? []);
+      setOriginalUsers(res?.data ?? [])
       setSelectedTeam(teamId);
       setAssignMemberForm(true);
     }
@@ -99,9 +105,9 @@ function Team() {
   const handleRemoveMember = async (teamId) => {
     console.log('Remove Member from Team:', teamId);
     const res = await getAllAssignedUsers(teamId)
-    if (res.success) {
-      setAllUsers(res.data ?? [])
-      setOriginalUsers(res.data ?? [])
+    if (res?.success) {
+      setAllUsers(res?.data ?? [])
+      setOriginalUsers(res?.data ?? [])
       setSelectedTeam(teamId);
       setRemoveMemberForm(true);
     }
@@ -120,8 +126,8 @@ function Team() {
     e.preventDefault();
     console.log('Remove Member from Team:', selectedTeam);
     const res = await removeMemberToTeam(selectedTeam, selectedUsers);
-    if (res.success) {
-      console.log('Member removed successfully:', res.data);
+    if (res?.success) {
+      console.log('Member removed successfully:', res?.data);
       setRemoveMemberForm(false);
       setDropdownIndex(null);
       setAllUsers([])
@@ -131,14 +137,14 @@ function Team() {
 
   return (
     <div className="relative flex flex-col space-y-4 w-full">
-      <div className="flex justify-end">
+      {isProjectOwner && <div className="flex justify-end">
         <button
           onClick={() => setAddTeamForm(!addTeamForm)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-transform"
         >
           + Add Team
         </button>
-      </div>
+      </div>}
 
       {addTeamForm && (
         <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
@@ -339,57 +345,61 @@ function Team() {
 
 
 
-      <div className="w-full bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-700">
-        <div className="grid grid-cols-2 gap-4 p-4 font-semibold bg-gray-800 rounded-xl mb-6 text-white">
-          <div>Team Name</div>
-          <div className="text-right">Actions</div>
-        </div>
+      <div className="w-full ">
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {allTeams.length > 0 && allTeams.map((team, index) => (
             <div
               key={index}
-              className="bg-gray-800 hover:bg-gray-700 transition-colors duration-200 border border-gray-600 p-4 rounded-xl flex items-center justify-between relative text-white"
+              className="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 p-5 rounded-2xl text-white shadow-xl transition-transform transform hover:-translate-y-1 hover:shadow-2xl"
             >
-              <div
-                className="flex-1 cursor-pointer hover:underline"
-                onClick={() => showDetails(team._id)}
-              >
-                <h3 className="text-lg font-semibold">{team.name}</h3>
+              {isProjectOwner && <div className="absolute top-3 right-3">
+                <button
+                  className="p-1.5 rounded-full hover:bg-gray-700 transition-colors"
+                  onClick={() => setDropdownIndex(dropdownIndex === index ? null : index)}
+                >
+                  <FaEllipsisV className="text-gray-400 hover:text-white text-sm" />
+                </button>
+
+                {dropdownIndex === index && (
+                  <div className="absolute right-0 top-10 w-44 z-30 rounded-xl shadow-xl border border-gray-700 bg-[#1e1e2e] overflow-hidden backdrop-blur-sm transition-all duration-300">
+                    <button
+                      onClick={() => handleAssignMember(team._id)}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-white hover:bg-[#313244] transition-colors"
+                    >
+                      Assign Member
+                    </button>
+                    <button
+                      onClick={() => handleRemoveMember(team._id)}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-yellow-400 hover:bg-[#443c25] hover:text-yellow-300 transition-colors"
+                    >
+                      Remove Member
+                    </button>
+                    <button
+                      onClick={() => handleDelete(team._id)}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-red-400 hover:bg-[#3b2a2a] hover:text-red-300 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>}
+
+              <div className="mt-6 space-y-2">
+                <h3
+                  className="text-lg font-bold cursor-pointer hover:text-blue-400 transition-colors"
+                  onClick={() => showDetails(team._id)}
+                >
+                  {team.name}
+                </h3>
+
+                {/* Add more team info if needed */}
+                <p className="text-sm text-gray-400 italic">Click for details</p>
               </div>
-
-              <button
-                className="ml-4 p-2 text-gray-400 hover:text-white"
-                onClick={() => setDropdownIndex(dropdownIndex === index ? null : index)}
-              >
-                <FaEllipsisV />
-              </button>
-
-              {dropdownIndex === index && (
-                <div className="absolute top-12 right-4 bg-gray-800 border border-gray-700 rounded-lg shadow-lg w-44 z-10 overflow-hidden">
-                  <button
-                    onClick={() => handleAssignMember(team._id)}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-700 transition-colors"
-                  >
-                    Assign Member
-                  </button>
-                  <button
-                    onClick={() => handleRemoveMember(team._id)}
-                    className="w-full text-left px-4 py-2 text-yellow-400 hover:bg-gray-700 transition-colors"
-                  >
-                    Remove Member
-                  </button>
-                  <button
-                    onClick={() => handleDelete(team._id)}
-                    className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-700 transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
             </div>
           ))}
         </div>
+
       </div>
 
     </div>

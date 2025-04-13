@@ -9,8 +9,6 @@ function Chat() {
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
 
-
-
   useEffect(() => {
     const fetchUsers = async () => {
       const res = await getProjectMembers(projectId);

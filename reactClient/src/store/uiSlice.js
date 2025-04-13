@@ -17,9 +17,6 @@ const uiSlice = createSlice({
         },
         setMessage : (state,action) =>{
             state.message = action.payload;
-            setTimeout(()=>{
-                state.message = '';
-            },3000)
         },
         clearMessage : (state) =>{
             state.message = '';
