@@ -1,16 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { getMessages, sendMessage } from '../services/chatService';
+import useSocket from '../provider/SocketProvider';
 
 function ChatArea({ selectedUser }) {
   const [chats, setChats] = useState([]);
   const [message, setMessage] = useState('');
 
+  const { client } = useSocket()
+
+
+  console.log(client);
+  
+
+
+
   useEffect(() => {
     const fetchMessages = async () => {
-        setChats([])
+      setChats([])
       const res = await getMessages(selectedUser._id);
       console.log(res);
-      
+
       if (res.success) {
         setChats(res.data);
       } else {
@@ -26,7 +35,7 @@ function ChatArea({ selectedUser }) {
   const handleSendMessage = async () => {
     const res = await sendMessage(selectedUser._id, message);
     console.log(res);
-    
+
     if (res.success) {
       setMessage('');
       setChats([...chats, res.data]);
@@ -55,16 +64,14 @@ function ChatArea({ selectedUser }) {
               chats.map((chat, index) => (
                 <div
                   key={index}
-                  className={`flex ${
-                    chat.sender === selectedUser._id ? 'justify-start' : 'justify-end'
-                  }`}
+                  className={`flex ${chat.sender === selectedUser._id ? 'justify-start' : 'justify-end'
+                    }`}
                 >
                   <div
-                    className={`px-4 py-2 rounded-lg max-w-xs ${
-                      chat.sender === selectedUser._id
-                        ? 'bg-gray-700 text-white'
-                        : 'bg-teal-500 text-black'
-                    }`}
+                    className={`px-4 py-2 rounded-lg max-w-xs ${chat.sender === selectedUser._id
+                      ? 'bg-gray-700 text-white'
+                      : 'bg-teal-500 text-black'
+                      }`}
                   >
                     {chat.message}
                   </div>
@@ -83,11 +90,10 @@ function ChatArea({ selectedUser }) {
               className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-l-xl focus:outline-none text-white"
             />
             <button
-              className={`px-4 py-2 ${
-                message.trim()
-                  ? 'bg-teal-500 hover:bg-teal-400 cursor-pointer'
-                  : 'bg-gray-600 cursor-not-allowed'
-              } text-black font-semibold rounded-r-xl`}
+              className={`px-4 py-2 ${message.trim()
+                ? 'bg-teal-500 hover:bg-teal-400 cursor-pointer'
+                : 'bg-gray-600 cursor-not-allowed'
+                } text-black font-semibold rounded-r-xl`}
               onClick={handleSendMessage}
               disabled={!message.trim()}
             >

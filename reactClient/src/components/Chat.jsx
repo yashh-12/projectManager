@@ -8,13 +8,8 @@ function Chat() {
   const { projectId } = useParams();
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const { client } = useSocket();
 
-  useEffect(() => {
-    if (client) {
-      client.on('connect', () => console.log('Connected to the server!'));
-    }
-  }, [client]);
+
 
   useEffect(() => {
     const fetchUsers = async () => {

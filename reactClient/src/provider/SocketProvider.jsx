@@ -7,6 +7,11 @@ const SocketContext = createContext();
 const socket = io('http://localhost:3000'); 
 
 export const SocketProvider = ({ children }) => {
+
+  socket.on("connect",() => {
+    console.log("connected to server");
+  })
+
   return (
     <SocketContext.Provider value={{ client: socket }}>
       {children}

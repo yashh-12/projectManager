@@ -4,77 +4,62 @@ import refreshAccessToken from "../middelware/refreshAceesToken.js";
 import expressServer from "../utils/expressServer.js";
 import authenticateUser from "../utils/auth.js";
 import apiResponse from "../utils/apiResponse.js";
-import {Server} from "socket.io"
-import {createServer} from "http"
+import { Server } from "socket.io";
+import { createServer } from "http";
 
 const app = expressServer();
-const http = createServer();
-const server = new Server(http,{
-  cors: true,
-  origins: ["http://localhost:5173"] 
-})
+const http = createServer(); // only for socket
+
+const server = new Server(http, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"]
+  }
+});
 
 server.on("connection", (client) => {
-  console.log(
-    `Client connected: ${client.id}`
-  );
-  client.on("connect",() => {
-    console.log("Client connected to the server");
-  })
-  
-})
+  console.log(`Socket connected: ${client.id}`);
+});
 
-
-//import routes
 import userRouter from "../routes/user.routes.js";
 import projectRouter from "../routes/project.routes.js";
 import taskRouter from "../routes/task.routes.js";
 import teamRouter from "../routes/team.routes.js";
 import chatRouter from "../routes/chat.routes.js";
+import { Socket } from "dgram";
 
-// routes
 app.use("/api/auth", userRouter);
 app.use("/api/projects", authenticateUser, projectRouter);
 app.use("/api/tasks", authenticateUser, taskRouter);
 app.use("/api/teams", authenticateUser, teamRouter);
 app.use("/api/chats", authenticateUser, chatRouter);
 
-
-//Home Route
+// Home route
 app.get("/", refreshAccessToken, isLoggedIn, (req, res) => {
-  // res.render("index", { isLoggedIn: req.isLoggedIn, error: "error" });
-  res.json(new apiResponse(200, { isLoggedIn: req.isLoggedIn, error: "" }, "Welcome to Home Page"));
+  res.json(new apiResponse(200, { isLoggedIn: req.isLoggedIn }, "Welcome to Home Page"));
 });
 
-
-//404 Route
+// 404 & error handling
 app.use((req, res) => {
-  // res.status(404).render("error", { error: "Page not found" });
-  res.json(new apiResponse(404, { error: "" }, "Page not found"));
-
+  res.status(404).json(new apiResponse(404, {}, "Page not found"));
 });
 
-
-//Error Handler
 app.use((err, req, res, next) => {
   console.error(err);
-  res.json(new apiResponse(500, { error: err.stack }, "Internal Server Error"));
+  res.status(500).json(new apiResponse(500, { error: err.stack }, "Internal Server Error"));
 });
 
-
-//Connection Checking
 const connection = await connectDb();
 const port = process.env.PORT ?? 8000;
+
 if (connection) {
-  console.log(
-    "Successfully connected to database : ",
-    connection.connection.host
-  );
+  console.log("Connected to DB:", connection.connection.host);
+
   app.listen(port, () => {
-    console.log(`listening on ${port}`);
+    console.log(` Express server running on http://localhost:${port}`);
   });
+
   http.listen(3000, () => {
-    console.log(`Socket.IO server running on port 8080`);
+    console.log("Socket.IO server running on http://localhost:3000");
   });
-  
 }

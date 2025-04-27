@@ -109,16 +109,12 @@ const assignTaskToTeam = asyncHandler(async (req, res) => {
 })
 
 const removeTeam = asyncHandler(async (req, res) => {
-    // console.log("came");
 
     const { taskId } = req.params
-    // const { teamId } = req.body
     if (!isValidObjectId(taskId)) {
         throw new apiError(400, "Invalid task ID")
     }
-    // if (!isValidObjectId(teamId)) {
-    //     throw new apiError(400, "Invalid team ID")
-    // }
+   
     const task = await Task.findByIdAndUpdate(taskId, {
         $set: {
             assign: null
