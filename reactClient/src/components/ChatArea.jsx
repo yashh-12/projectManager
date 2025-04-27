@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getMessages, sendMessage } from '../services/chatService';
 import useSocket from '../provider/SocketProvider';
 import { useDispatch, useSelector } from 'react-redux';
@@ -7,13 +7,21 @@ function ChatArea({ selectedUser }) {
   const [chats, setChats] = useState([]);
   const [message, setMessage] = useState('');
   const { client } = useSocket();
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chats]);
 
   useEffect(() => {
     if (!client) return;
     
     const handleMessage = (data) => {
-        setChats(prevChats => [...prevChats, data]);
-      
+      setChats(prevChats => [...prevChats, data]);
     };
 
     client.on("recMessage", handleMessage);
@@ -28,7 +36,7 @@ function ChatArea({ selectedUser }) {
       if (!selectedUser) return;
 
       try {
-        setChats([])
+        setChats([]);
         const res = await getMessages(selectedUser._id);
         if (res.success) {
           setChats(res.data);
@@ -47,11 +55,10 @@ function ChatArea({ selectedUser }) {
     if (!message.trim()) return;
 
     const res = await sendMessage(selectedUser._id, message);
-    console.log(res);
 
     if (res.success) {
       setMessage('');
-      setChats(prevChats => [...prevChats, res.data]); // Show sent message instantly
+      setChats(prevChats => [...prevChats, res.data]);
       client.emit("sendMess", res.data);
     } else {
       console.error("Message send failed:", res.message);
@@ -70,7 +77,6 @@ function ChatArea({ selectedUser }) {
             <h2 className="text-lg font-semibold">Chat with {selectedUser.name}</h2>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 bg-gray-800 rounded-xl p-4 overflow-y-auto text-gray-300 space-y-2">
             {chats.length === 0 ? (
               <p className="text-sm italic text-center">No messages yet...</p>
@@ -91,9 +97,9 @@ function ChatArea({ selectedUser }) {
                 </div>
               ))
             )}
+            <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div className="mt-4 flex">
             <input
               type="text"
