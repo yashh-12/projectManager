@@ -5,6 +5,8 @@ import apiError from "../utils/apiError.js";
 import sendVerificationEmail from "../utils/nodeMailer.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt"
+import Notification from "../models/notification.model.js";
+import Chat from "../models/chat.model.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, username, email, password } = req.body;
@@ -302,16 +304,15 @@ const deleteAccount = asyncHandler(async (req, res) => {
 });
 
 const getUserDetails = asyncHandler(async (req, res) => {
-  // console.log("Getting user details ", req?.user);
 
-  const user = await User.findById(req?.user?._id).select("--refreshToken --password");
+  let oldUser = await User.findById(req?.user?._id).select("--refreshToken --password");
 
-  if (!user)
+  if (!oldUser)
     return res.status(404).json(new apiError(404, "User not found"));
 
   return res
     .status(200)
-    .json(new apiResponse(200, user, "User details fetched successfully"));
+    .json(new apiResponse(200, oldUser, "User details fetched successfully"));
 });
 
 const changeUserDetails = asyncHandler(async (req, res) => {

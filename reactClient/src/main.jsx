@@ -25,6 +25,7 @@ import teamLoader from './loaderFunctions/teamLoader.js'
 import overViewLoader from './loaderFunctions/overViewLoader.js'
 import Chat from './components/Chat.jsx'
 import { SocketProvider } from './provider/SocketProvider.jsx'
+import VideoCall from './pages/VideoCall.jsx'
 
 
 
@@ -44,7 +45,10 @@ const router = createBrowserRouter(
           <Route path='tasks' loader={taskLoader} element={<Task />} />
           <Route path='teams' loader={teamLoader} element={<Team />} />
           <Route path='chat' element={<Chat />} />
+          <Route path='videocall' element={<VideoCall />} />
+
         </Route>
+
       </Route>
     </Route>
   )

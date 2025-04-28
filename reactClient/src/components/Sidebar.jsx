@@ -153,7 +153,6 @@ function Sidebar() {
                             </button>
                         )}
 
-                        {/* Projects List */}
                         <div className="space-y-2">
                             {projects?.length > 0 ? (
                                 renderProjects()
@@ -162,7 +161,6 @@ function Sidebar() {
                             )}
                         </div>
 
-                        {/* Join Project Button */}
                         <button className="w-full mt-4 py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition">
                             Join a Project
                         </button>

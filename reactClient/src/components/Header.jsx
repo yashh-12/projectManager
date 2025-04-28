@@ -1,13 +1,27 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from "../services/authService.js";
-import { dispatchLogout } from '../store/authSlice';
+import { dispatchLogout } from '../store/authSlice.js';
+import { Bell } from 'lucide-react';
+import { getUnreadNotificationCount } from '../services/notificationService.js';
 
 function Header() {
   const navigate = useNavigate();
   const userData = useSelector((state) => state.auth.userData);
   const dispatch = useDispatch();
+  const [notificationCount,setNotificationCount] = useState(0)
+
+  const fetchNotificationCount = async()=>{
+    const unreadNotificationCount = await getUnreadNotificationCount()
+    console.log(unreadNotificationCount);
+    
+    setNotificationCount(unreadNotificationCount)
+  }
+
+  useEffect(()=>{
+    fetchNotificationCount()
+  },[])
 
   const handleLogout = async () => {
     const res = await logout();
@@ -31,7 +45,7 @@ function Header() {
         <span className="text-sm font-semibold">{userData?.username || 'User'}</span>
       </div>
 
-      <div className="flex-1 mx-6">
+      <div className="flex-1 mx-6 relative">
         <input
           type="text"
           placeholder="Search..."
@@ -39,12 +53,23 @@ function Header() {
         />
       </div>
 
-      <button
-        onClick={handleLogout}
-        className="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition duration-200"
-      >
-        Logout
-      </button>
+      <div className="flex items-center gap-4">
+        <div className="relative cursor-pointer">
+          <Bell className="w-6 h-6 text-white" />
+          {notificationCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              {notificationCount}
+            </span>
+          )}
+        </div>
+
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition duration-200"
+        >
+          Logout
+        </button>
+      </div>
     </header>
   );
 }

@@ -24,8 +24,19 @@ function Chat() {
   return (
     <div className="flex h-screen bg-gray-900 text-white p-4">
       <aside className="w-1/4 bg-gray-900 border border-gray-700 rounded-2xl shadow-xl p-4 mr-4 overflow-y-auto">
-        <h2 className="text-xl font-semibold mb-4">💬 Users</h2>
+        <h2 className="text-xl font-semibold mb-6">💬 Users </h2>
         <div className="space-y-2">
+          <div
+            onClick={() => setSelectedUser({ isGroupChat: true })}
+            className={`p-4 rounded-xl border border-teal-500 cursor-pointer hover:bg-gray-800 transition-colors duration-200 ${
+              selectedUser?.isGroupChat ? 'bg-gray-800' : 'bg-gray-900'
+            }`}
+          >
+            <p className="font-medium text-teal-400 break-words whitespace-normal w-full">
+              Group Chat
+            </p>
+          </div>
+  
           {allUsers.map((user) => (
             <div
               key={user._id}
@@ -33,19 +44,22 @@ function Chat() {
               className={`p-4 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-800 transition-colors duration-200 ${
                 selectedUser?._id === user._id ? 'bg-gray-800' : 'bg-gray-900'
               }`}
-              style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }} // fallback for extreme cases
+              style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
             >
               <p className="font-medium break-words whitespace-normal w-full">
                 {user.name}
               </p>
+
+
             </div>
           ))}
         </div>
       </aside>
-
-      <ChatArea selectedUser={selectedUser}/>
+  
+      <ChatArea selectedUser={selectedUser} />
     </div>
   );
+  
 }
 
 export default Chat;

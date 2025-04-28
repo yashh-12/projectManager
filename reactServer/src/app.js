@@ -8,7 +8,7 @@ import { Server } from "socket.io";
 import { createServer } from "http";
 
 const app = expressServer();
-const http = createServer(); // only for socket
+const http = createServer();
 
 const server = new Server(http, {
   cors: {
@@ -16,42 +16,78 @@ const server = new Server(http, {
     methods: ["GET", "POST"]
   }
 });
-
 const socketHashMap = {};
 
 server.on("connection", (client) => {
-  console.log(`Socket connected: ${client.id}`);
-
-  client.on("register", (userId) => {    
+  client.on("register", (userId) => {
     socketHashMap[userId] = client.id;
-    console.log(`User ${userId} registered with socket ID ${client.id}`);
   });
 
-  client.on("sendMess", (data) => {    
-    const recipientId = data.recipient;
-    const recipientSocketId = socketHashMap[recipientId];
+  client.on("joinProject", (projectId) => {
+    client.join(`project_${projectId}`);
+  });
 
-    console.log("Message received from sender:", data);
+  client.on("reduceChatCount",data => {
+    console.log("number of unread chat ",data);
+    client.emit("minusRead",data)
+  })
 
-    if (recipientSocketId) {
-      client.to(recipientSocketId).emit("recMessage", data);
-      console.log(`Message sent to recipient socket ${recipientSocketId}`);
+  client.on("leaveRoom", (projectId) => {
+    client.leave(`project_${projectId}`);
+  });
+
+  client.on("sendMess", (data) => {
+    const groupchat = data?.isGroupchat;
+    if (groupchat) {
+      server.to(`project_${data.projectId}`).emit("recMessage", data);
     } else {
-      console.log("Recipient is not connected.");
+      const recipientSocketId = socketHashMap[data.recipient];
+      if (recipientSocketId) {
+        server.to(recipientSocketId).emit("recMessage", data);
+      }
     }
   });
 
-  client.on("newTask",(task) => {
-    console.log("task added ",task);
-    
-    client.broadcast.emit("receiveAddedTask",task)
-  })
+  client.on("newTask", (task) => {
+    if (task.projectId) {
+      server.to(`project_${task.projectId}`).emit("receiveAddedTask", task);
+    } else {
+      client.broadcast.emit("receiveAddedTask", task);
+    }
+  });
+
+  client.on('call-user', ({ targetUserId, callerId, roomId }) => {
+    const targetSocketId = socketHashMap[targetUserId];
+    if (targetSocketId) {
+      server.to(targetSocketId).emit('incoming-call', { callerId, roomId });
+    }
+  });
+
+  client.on('offer', ({ targetUserId, offer }) => {
+    const targetSocketId = socketHashMap[targetUserId];
+    if (targetSocketId) {
+      server.to(targetSocketId).emit('offer', { offer });
+    }
+  });
+
+  client.on('answer', ({ targetUserId, answer }) => {
+    const targetSocketId = socketHashMap[targetUserId];
+    if (targetSocketId) {
+      server.to(targetSocketId).emit('answer', { answer });
+    }
+  });
+
+  client.on('ice-candidate', ({ targetUserId, candidate }) => {
+    const targetSocketId = socketHashMap[targetUserId];
+    if (targetSocketId) {
+      server.to(targetSocketId).emit('ice-candidate', { candidate });
+    }
+  });
 
   client.on("disconnect", () => {
     for (const userId in socketHashMap) {
       if (socketHashMap[userId] === client.id) {
         delete socketHashMap[userId];
-        console.log(`User ${userId} disconnected and removed from map`);
         break;
       }
     }
@@ -64,13 +100,14 @@ import projectRouter from "../routes/project.routes.js";
 import taskRouter from "../routes/task.routes.js";
 import teamRouter from "../routes/team.routes.js";
 import chatRouter from "../routes/chat.routes.js";
-import { log } from "console";
+import notificationRouter from "../routes/notification.routes.js";
 
 app.use("/api/auth", userRouter);
 app.use("/api/projects", authenticateUser, projectRouter);
 app.use("/api/tasks", authenticateUser, taskRouter);
 app.use("/api/teams", authenticateUser, teamRouter);
 app.use("/api/chats", authenticateUser, chatRouter);
+app.use("/api/notifications", authenticateUser, notificationRouter);
 
 // Home route
 app.get("/", refreshAccessToken, isLoggedIn, (req, res) => {

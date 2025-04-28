@@ -22,6 +22,8 @@ function Layout() {
     const fetchUser = async () => {
       try {
         const res = await getUserDetails();
+        console.log(res);
+        
         if (res?.success) {
           dispatch(dispatchLogin(res.data));
         }

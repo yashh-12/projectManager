@@ -1,4 +1,5 @@
 import { mongoose,Schema } from "mongoose";
+import { FaS } from "react-icons/fa6";
 
 const ChatSchema = new Schema({
     sender: {
@@ -16,6 +17,20 @@ const ChatSchema = new Schema({
         required: true,
         maxlength: 500
     },
+    isGroupchat:{
+        type: Boolean,
+        default: false
+    },
+    projectId : {
+        type: Schema.Types.ObjectId,
+        ref: "Project",
+        required: true
+    },
+    status:{
+        type:String,
+        enum:["read","unread"],
+        default:"unread"
+    }
     
 },{timestamps: true})
 

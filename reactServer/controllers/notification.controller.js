@@ -124,6 +124,8 @@ const clearAllNotification = asyncHandler(async (req, res) => {
 })
 
 
+
+
 export {
   createNotification,
   getAllUnreadNotification,
