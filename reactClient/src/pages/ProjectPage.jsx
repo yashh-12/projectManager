@@ -9,7 +9,8 @@ function ProjectPage() {
   const {client} = useSocket()
 
   const fetchUnreadNotificationCount = async () => {
-    const count = await getUnreadChatCount(projectId);    
+
+    const count = await getUnreadChatCount(projectId);        
     setUnreadChatCount(count?.data);
   };
 
@@ -17,6 +18,8 @@ function ProjectPage() {
       if (!client) return;
   
       const handleMessage = (data) => {
+        console.log("ran");
+        
         setUnreadChatCount((prev ) => prev + 1 )
       };
   

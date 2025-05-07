@@ -23,6 +23,8 @@ function Header() {
     fetchNotificationCount()
   },[])
 
+  
+
   const handleLogout = async () => {
     const res = await logout();
     if (res.success) {

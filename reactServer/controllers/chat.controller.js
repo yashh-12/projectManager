@@ -3,7 +3,6 @@ import Chat from "../models/chat.model.js";
 import User from "../models/user.model.js";
 import apiError from "../utils/apiError.js";
 import apiResponse from "../utils/apiResponse.js";
-import { send } from "process";
 
 const sendMessage = asyncHandler(async (req, res) => {
 
@@ -105,7 +104,7 @@ const getMessages = asyncHandler(async (req, res) => {
 const getUnreadChatCount = asyncHandler(async (req, res) => {
 
     const {projectId} = req.params
-    const unreadChatCount = await Chat.countDocuments({ status: "unread" ,projectId : projectId,sender:req?.user?._id});
+    const unreadChatCount = await Chat.countDocuments({ status: "unread" ,projectId : projectId,sender:req?.user?._id , isGroupchat : false} );
   
     return res.status(200).json(
       new apiResponse(200, unreadChatCount || 0, "Messages retrieved successfully")

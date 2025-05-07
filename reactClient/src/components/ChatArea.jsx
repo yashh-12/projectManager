@@ -47,8 +47,12 @@ function ChatArea({ selectedUser }) {
     if (!client) return;
 
     const handleMessage = (data) => {
-      setChats(prevChats => [...prevChats, data]);
-      client.emit("reduceChatCount",1)
+      console.log("data", data, "/n selected user", selectedUser);
+
+      if (selectedUser._id == data?.sender || selectedUser?._id == data?.recipient)  {
+        setChats(prevChats => [...prevChats, data]);
+        client.emit("reduceChatCount", 1)
+      }
     };
 
     client.on("recMessage", handleMessage);
@@ -86,8 +90,8 @@ function ChatArea({ selectedUser }) {
           const res = await getMessages(selectedUser._id);
           if (res.success) {
             setChats(res.data);
-            
-            const newReadCount = res.data.filter(chat => chat?.status == "unread");            
+
+            const newReadCount = res.data.filter(chat => chat?.status == "unread");
             client.emit("reduceChatCount", newReadCount.length)
 
           }
@@ -174,12 +178,12 @@ function ChatArea({ selectedUser }) {
               ) : (
                 chats.map((chat, index) => (
                   <div
-                  key={index}
-                  className={`flex ${chat.sender?.toString() === userData._id?.toString()
-                    ? 'justify-end'
-                    : 'justify-start'
-                  }`}
-                
+                    key={index}
+                    className={`flex ${chat.sender?.toString() === userData._id?.toString()
+                      ? 'justify-end'
+                      : 'justify-start'
+                      }`}
+
 
                   >
                     <div
@@ -190,10 +194,10 @@ function ChatArea({ selectedUser }) {
                     >
                       {chat.message}
                     </div>
-                    
+
                   </div>
 
-                 
+
                 ))
               )}
               <div ref={messagesEndRef} />
