@@ -65,3 +65,32 @@
     color: white !important;
   }
   
+/* Modal styling */
+.modal-content {
+  background-color: #000; /* Black background */
+  border-radius: 0px; /* No rounded corners */
+  padding: 0; /* Remove padding for full-screen layout */
+  width: 100vw; /* Full width */
+  height: 100vh; /* Full height */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.9); /* Semi-transparent black overlay */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Video styling for local and remote video elements */
+video {
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  object-fit: cover; /* Ensure videos fill the space without distortion */
+  border-radius: 8px;
+  border: 2px solid #fff;
+}

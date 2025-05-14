@@ -34,7 +34,7 @@ function Task() {
     const [formTaskId, setFormTaskID] = useState(null)
     const [allTasks, setAllTasks] = useState(tasks?.data || [])
     const [modifyForm, setModifyForm] = useState(false)
-    const [originalTeam, setOriginalTeam] = useState([])
+    const [originalTeam, setOriginalTeam] = useState()
     const [searchText, setSearchText] = useState("")
     const [notification, setNotification] = useState("")
 
@@ -54,6 +54,10 @@ function Task() {
             document.body.classList.remove("overflow-hidden");
         }
     }, [assignForm]);
+
+    useEffect(() => {
+        setAllTeams(originalTeam?.filter(team => team.name.includes(searchText.toLowerCase() || "")))
+    },[searchText])
 
     const handleAddTask = async (e) => {
         e.preventDefault();

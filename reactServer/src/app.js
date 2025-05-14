@@ -23,13 +23,20 @@ server.on("connection", (client) => {
     socketHashMap[userId] = client.id;
   });
 
+  client.on("join-personalRoom",roomId=>{
+    client.join(roomId)
+  })
+
   client.on("joinProject", (projectId) => {
     client.join(`project_${projectId}`);
   });
 
-  client.on("reduceChatCount",data => {
-    console.log("number of unread chat ",data);
-    client.emit("minusRead",data)
+  client.on("reduceChatCount", data => {
+    client.emit("minusRead", data)
+  })
+
+  client.on("reduceUserCount", data => {
+    client.emit("minusUserCount", data)
   })
 
   client.on("leaveRoom", (projectId) => {
@@ -37,15 +44,12 @@ server.on("connection", (client) => {
   });
 
   client.on("sendMess", (data) => {
-    const groupchat = data?.isGroupchat;
-    if (groupchat) {
-      server.to(`project_${data.projectId}`).emit("recMessage", data);
-    } else {
-      const recipientSocketId = socketHashMap[data.recipient];
-      if (recipientSocketId) {
-        server.to(recipientSocketId).emit("recMessage", data);
-      }
+
+    const recipientSocketId = socketHashMap[data.recipient];
+    if (recipientSocketId) {
+      server.to(recipientSocketId).emit("recMessage", data);
     }
+
   });
 
   client.on("newTask", (task) => {
@@ -56,10 +60,11 @@ server.on("connection", (client) => {
     }
   });
 
-  client.on('call-user', ({ targetUserId, callerId, roomId }) => {
+  client.on('call-user', ({ user, targetUserId, callerId, roomId }) => {    
     const targetSocketId = socketHashMap[targetUserId];
     if (targetSocketId) {
-      server.to(targetSocketId).emit('incoming-call', { callerId, roomId });
+      client.join(roomId);
+      server.to(targetSocketId).emit('incoming-call', { user ,callerId, roomId });
     }
   });
 

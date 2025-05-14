@@ -1,39 +1,35 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { getGroupChat, getMessages, sendGroupMessage, sendMessage } from '../services/chatService';
+import { getMessages, markChatAsRead, sendMessage } from '../services/chatService';
 import useSocket from '../provider/SocketProvider';
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import FlashMsg from './FlashMsg';
+import { da } from 'date-fns/locale';
 
 function ChatArea({ selectedUser }) {
-
-
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [chats, setChats] = useState([]);
   const [message, setMessage] = useState('');
-  const [flashMsg, setFlashMsg] = useState("");
+  const [flashMsg, setFlashMsg] = useState('');
   const { projectId } = useParams();
   const { client } = useSocket();
   const messagesEndRef = useRef(null);
   const userData = useSelector(state => state.auth.userData);
-  const [confirmMakeCall, setConfirmMakeCall] = useState(false)
-
-  const isGroupChat = selectedUser?.isGroupChat;
+  const [confirmMakeCall, setConfirmMakeCall] = useState(false);
 
   const getMediaPermission = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       console.log('Got Media Stream:', stream);
-      setConfirmMakeCall(true)
+      setConfirmMakeCall(true);
     } catch (err) {
       console.error('Error accessing media devices.', err);
-      setFlashMsg("Please allow microphone and camera")
+      setFlashMsg('Please allow microphone and camera');
       setTimeout(() => {
-        setFlashMsg("")
-      }, 4000)
+        setFlashMsg('');
+      }, 4000);
     }
   };
-
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,58 +42,42 @@ function ChatArea({ selectedUser }) {
   useEffect(() => {
     if (!client) return;
 
-    const handleMessage = (data) => {
-      console.log("data", data, "/n selected user", selectedUser);
+    const handleMessage = async (data) => {
 
-      if (selectedUser._id == data?.sender || selectedUser?._id == data?.recipient)  {
-        setChats(prevChats => [...prevChats, data]);
-        client.emit("reduceChatCount", 1)
+      if (data?.sender == selectedUser?._id) {
+        const res = await markChatAsRead(data?._id)
+        if (res?.success) {
+          setChats(prevChats => [...prevChats, data]);
+          client.emit("reduceChatCount", 1)
+          client.emit("reduceUserCount", data)
+
+        }
       }
     };
 
-    client.on("recMessage", handleMessage);
+    client.on('recMessage', handleMessage);
 
     return () => {
-      client.off("recMessage", handleMessage);
+      client.off('recMessage', handleMessage);
     };
   }, [client, selectedUser]);
 
-  useEffect(() => {
-    if (!client || !projectId) return;
-    client.emit("joinRoom", projectId);
-
-    return () => {
-      client.emit("leaveRoom", projectId);
-    };
-  }, [client, projectId]);
 
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedUser) return;
-      if (isGroupChat) {
-        try {
-          setChats([]);
-          const res = await getGroupChat(projectId);
-          if (res.success) {
-            setChats(res.data);
-          }
-        } catch (err) {
-          console.error("Error fetching group messages:", err);
-        }
-      } else {
-        try {
-          setChats([]);
-          const res = await getMessages(selectedUser._id);
-          if (res.success) {
-            setChats(res.data);
+      try {
+        setChats([]);
+        const res = await getMessages(selectedUser._id);
+        if (res.success) {
+          setChats(res.data);
+          const newReadCount = res.data.filter(chat => chat?.status === 'unread');
+          client.emit("reduceChatCount", newReadCount?.length)
+          client.emit("reduceUserCount", selectedUser)
 
-            const newReadCount = res.data.filter(chat => chat?.status == "unread");
-            client.emit("reduceChatCount", newReadCount.length)
-
-          }
-        } catch (err) {
-          console.error("Error fetching private messages:", err);
         }
+      } catch (err) {
+        console.error('Error fetching private messages:', err);
       }
     };
 
@@ -106,24 +86,20 @@ function ChatArea({ selectedUser }) {
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
-    let res;
-    if (isGroupChat) {
-      res = await sendGroupMessage(message, projectId);
-    } else {
-      res = await sendMessage(selectedUser._id, message, projectId);
-    }
 
+    const res = await sendMessage(selectedUser._id, message, projectId);
     if (res.success) {
       setMessage('');
+
       setChats(prevChats => [...prevChats, res.data]);
-      client.emit("sendMess", { ...res.data, projectId });
+      client.emit('sendMess', res.data);
     }
+
   };
 
   return (
     <>
-
-      <FlashMsg message={flashMsg} setMessage={() => setFlashMsg("")} />
+      <FlashMsg message={flashMsg} setMessage={() => setFlashMsg('')} />
       {confirmMakeCall && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl flex flex-col gap-6">
@@ -138,11 +114,13 @@ function ChatArea({ selectedUser }) {
               <button
                 onClick={() => {
                   client.emit('call-user', {
+                    user: userData,
                     targetUserId: selectedUser._id,
                     callerId: userData._id,
                     roomId: `call-${Date.now()}-${Math.floor(Math.random() * 1000)}`
                   });
-                  setConfirmMakeCall(false)
+                  setConfirmMakeCall(false);
+                  navigate(`/projects/${projectId}/videocall`)
                 }}
                 className="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-black text-lg font-medium"
               >
@@ -183,8 +161,6 @@ function ChatArea({ selectedUser }) {
                       ? 'justify-end'
                       : 'justify-start'
                       }`}
-
-
                   >
                     <div
                       className={`px-5 py-3 rounded-2xl max-w-sm ${chat.sender === userData._id
@@ -194,10 +170,7 @@ function ChatArea({ selectedUser }) {
                     >
                       {chat.message}
                     </div>
-
                   </div>
-
-
                 ))
               )}
               <div ref={messagesEndRef} />
@@ -209,9 +182,18 @@ function ChatArea({ selectedUser }) {
                 placeholder="Type a message..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    
+                    e.preventDefault(); 
+                    handleSendMessage();
+                  }
+                }}
                 className="flex-1 px-5 py-3 bg-gray-700 border border-gray-600 rounded-l-2xl focus:outline-none text-white text-lg"
               />
+
               <button
+
                 onClick={handleSendMessage}
                 disabled={!message.trim()}
                 className={`px-6 py-3 ${message.trim()
@@ -227,7 +209,6 @@ function ChatArea({ selectedUser }) {
       </main>
     </>
   );
-
 }
 
 export default ChatArea;

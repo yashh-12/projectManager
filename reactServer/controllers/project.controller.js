@@ -683,23 +683,22 @@ const getProjectMembers = asyncHandler(async (req, res) => {
       },
     },
     {
-      $addFields: {
-        memberIds: {
-          $map: {
-            input: "$teamMembers",
-            as: "tm",
-            in: "$$tm.member",
-          },
-        },
+      $unwind: {
+        path: "$teamMembers",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        owner: { $first: "$owner" },
+        members: { $addToSet: "$teamMembers.member" },
       },
     },
     {
       $addFields: {
-        userIds: {
-          $setUnion: [
-            "$memberIds",
-            ["$owner"], // add the project owner
-          ],
+        allMembers: {
+          $setUnion: ["$members", ["$owner"]],
         },
       },
     },
@@ -707,16 +706,14 @@ const getProjectMembers = asyncHandler(async (req, res) => {
       $project: {
         userIds: {
           $filter: {
-            input: "$userIds",
+            input: "$allMembers",
             as: "uid",
-            cond: { $ne: ["$$uid", currentUserId] }, 
+            cond: { $ne: ["$$uid", currentUserId] },
           },
         },
       },
     },
-    {
-      $unwind: "$userIds",
-    },
+    { $unwind: "$userIds" },
     {
       $lookup: {
         from: "users",
@@ -725,25 +722,66 @@ const getProjectMembers = asyncHandler(async (req, res) => {
         as: "userDetails",
       },
     },
+    { $unwind: "$userDetails" },
     {
-      $unwind: "$userDetails",
-    },
-
-    {
-      $group: {
-        _id: "$userDetails._id",
-        user: { $first: "$userDetails" },
+      $lookup: {
+        from: "chats",
+        let: {
+          senderId: "$userDetails._id",
+          recipientId: currentUserId,
+          projectId: new mongoose.Types.ObjectId(projectId),
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$sender", "$$senderId"] },
+                  { $eq: ["$recipient", "$$recipientId"] },
+                  { $eq: ["$projectId", "$$projectId"] },
+                  { $eq: ["$status", "unread"] },
+                ],
+              },
+            },
+          },
+        ],
+        as: "unreadMessages",
       },
     },
     {
-      $replaceRoot: { newRoot: "$user" },
+      $addFields: {
+        unreadCount: { $size: "$unreadMessages" },
+      },
     },
+    {
+      $project: {
+        _id: "$userDetails._id",
+        name: "$userDetails.name",
+        email: "$userDetails.email",
+        avatar: "$userDetails.avatar",
+        username: "$userDetails.username",
+        unreadCount: 1,
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$name" },
+        email: { $first: "$email" },
+        avatar: { $first: "$avatar" },
+        username: { $first: "$username" },
+        unreadCount: { $first: "$unreadCount" },
+      },
+    },  {
+      $sort: { unreadCount: -1 }, 
+    }
   ]);
 
   return res
     .status(200)
-    .json(new apiResponse(200, users, "All project users (excluding self)"));
+    .json(new apiResponse(200, users, "Unique project users with unread counts"));
 });
+
 
 
 

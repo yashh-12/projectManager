@@ -93,4 +93,22 @@ const getUnreadChatCount = async (projectId) => {
     }
 }
 
-export { sendMessage, getMessages ,getGroupChat,sendGroupMessage,getUnreadChatCount}
+const markChatAsRead = async (chatId) => {
+    try {
+        const res = await fetch(`http://localhost:8080/api/chats/${chatId}/markasread`, {
+            method: "PUT", 
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+        });
+
+        return res.json();
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+
+
+export { sendMessage, getMessages ,getGroupChat,sendGroupMessage,getUnreadChatCount ,markChatAsRead}

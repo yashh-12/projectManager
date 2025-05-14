@@ -4,30 +4,26 @@ import User from "../models/user.model.js";
 import apiError from "../utils/apiError.js";
 import apiResponse from "../utils/apiResponse.js";
 
+// Send private message
 const sendMessage = asyncHandler(async (req, res) => {
-
     const { recipientId, message, projectId } = req.body;
 
     if (!recipientId || !message) {
         throw new apiError(400, "Recipient ID and message are required");
     }
 
-
     const sender = req.user;
     const recipient = await User.findById(recipientId);
-
 
     if (!recipient) {
         throw new apiError(404, "User not found");
     }
 
-
     const chat = await Chat.create({
         sender: sender._id,
         recipient: recipient._id,
         message,
-        projectId,
-        isGroupchat: false,
+        projectId
     });
 
     if (!chat) {
@@ -35,48 +31,19 @@ const sendMessage = asyncHandler(async (req, res) => {
     }
 
     return res.status(201).json(new apiResponse(201, chat, "Message sent successfully"));
+});
 
-})
-
-const sendGroupMessage = asyncHandler(async (req, res) => {
-
-    const { message, projectId } = req.body;
-
-    if (!message) {
-        throw new apiError(400, "Recipient ID and message are required");
-    }
-
-
-    const sender = req?.user;
-
-    const chat = await Chat.create({
-        sender: sender._id,
-        recipient: sender._id,
-        message,
-        projectId,
-        isGroupchat: true,
-    });
-
-    console.log(chat);
-    
-
-    if (!chat) {
-        throw new apiError(500, "Failed to send message");
-    }
-
-    return res.status(201).json(new apiResponse(201, chat, "Message sent successfully"));
-
-})
-
+// Get chat messages between two users
 const getMessages = asyncHandler(async (req, res) => {
-
     const { recipientId } = req.params;
+
     if (!recipientId) {
         throw new apiError(400, "Recipient ID is required");
     }
 
     const sender = req.user;
     const recipient = await User.findById(recipientId);
+
     if (!recipient) {
         throw new apiError(404, "User not found");
     }
@@ -88,43 +55,55 @@ const getMessages = asyncHandler(async (req, res) => {
         ]
     }).sort({ createdAt: 1 });
 
-    const chatss = await Chat.updateMany(
-        { recipient: recipient._id, sender: sender._id, status: "unread" },
+    // Mark messages as read
+    await Chat.updateMany(
+        { recipient: sender._id, sender: recipient._id, status: "unread" },
         { $set: { status: "read" } }
     );
-
-    console.log(chatss);
-    
 
     return res.status(200).json(new apiResponse(200, messages, "Messages retrieved successfully"));
 });
 
-
-
+// Get count of unread messages for a project
 const getUnreadChatCount = asyncHandler(async (req, res) => {
-
-    const {projectId} = req.params
-    const unreadChatCount = await Chat.countDocuments({ status: "unread" ,projectId : projectId,sender:req?.user?._id , isGroupchat : false} );
-  
-    return res.status(200).json(
-      new apiResponse(200, unreadChatCount || 0, "Messages retrieved successfully")
-    );
-  });
-  
-
-const getGroupChat = asyncHandler(async (req, res) => {
     const { projectId } = req.params;
-    if (!projectId) {
-        throw new apiError(400, "Project ID is required");
+
+    const unreadChatCount = await Chat.countDocuments({
+        status: "unread",
+        projectId,
+        recipient: req.user._id
+    });
+
+    return res.status(200).json(
+        new apiResponse(200, unreadChatCount || 0, "Unread message count retrieved successfully")
+    );
+});
+
+// Mark single chat as read
+const markChatAsRead = asyncHandler(async (req, res) => {
+    const { chatId } = req.params;
+
+    if (!chatId) {
+        throw new apiError(400, "Chat ID is required");
     }
 
-    const messages = await Chat.find({
-        isGroupchat: true,
-        projectId: projectId
-    }).sort({ createdAt: 1 });
+    const chat = await Chat.findById(chatId);
 
-    return res.status(200).json(new apiResponse(200, messages, "Messages retrieved successfully"));
-})
+    if (!chat) {
+        throw new apiError(404, "Invalid chat ID");
+    }
 
+    if (chat.recipient.equals(req.user._id) && chat.status === "unread") {
+        chat.status = "read";
+        await chat.save();
+    }
 
-export { sendMessage, getMessages, getGroupChat ,sendGroupMessage , getUnreadChatCount}
+    return res.status(200).json(new apiResponse(200, chat, "Marked as read"));
+});
+
+export {
+    sendMessage,
+    getMessages,
+    getUnreadChatCount,
+    markChatAsRead
+};
