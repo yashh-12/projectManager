@@ -183,7 +183,6 @@ const addAFile = asyncHandler(async (req, res) => {
 
   files.forEach(async (element) => {
     const result = await uploadonCloudinary(element.path)
-    // console.log(result);
 
     let response = {
       url: result.url,

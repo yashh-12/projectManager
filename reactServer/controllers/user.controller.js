@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt"
 import Notification from "../models/notification.model.js";
 import Chat from "../models/chat.model.js";
+import { uploadonCloudinary } from "../utils/cloudinary.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, username, email, password } = req.body;
@@ -23,11 +24,11 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
   if (existingUser) {
-    if (existingUser.isVerified) 
+    if (existingUser.isVerified)
       return res
-       .status(400)
-       .json(new apiError(400, "User already exists and is verified"));
-    
+        .status(400)
+        .json(new apiError(400, "User already exists and is verified"));
+
 
     const otp = await sendVerificationEmail(existingUser?.email);
     const newOpt = otp.toString();
@@ -60,7 +61,7 @@ const registerUser = asyncHandler(async (req, res) => {
     username,
     otp: hashedOtp
   });
-  
+
 
   if (!newUser) {
     return res
@@ -158,13 +159,13 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const verifyUser = asyncHandler(async (req, res) => {
   const { otp } = req.body;
-  const {emailId} = req.params;
+  const { emailId } = req.params;
 
   if (!otp)
     return res.status(400).json(new apiError(400, "Please enter otp"));
 
   const user = await User.findOne({ email: emailId }).select("-password -refreshToken");
-  
+
   if (!user)
     return res.status(400).json(new apiError(400, "User not found"));
 
@@ -178,8 +179,8 @@ const verifyUser = asyncHandler(async (req, res) => {
   }
 
   const verify = await bcrypt.compare(otp, user?.otp)
-  
-    if (!verify)
+
+  if (!verify)
     return res.status(400).json(new apiError(400, "Invalid otp"));
 
   user.isVerified = true;
@@ -249,7 +250,7 @@ const changePassword = asyncHandler(async (req, res) => {
   const isMatch = await user.isCorrectPassword(password);
   if (!isMatch) throw new apiError(400, "Incorrect password");
 
-  const newPassword = await bcrypt.hash(req.body.newPassword, 10);
+  const newPassword = await bcrypt.hash(req?.body?.newPassword, 10);
   const updatedData = await User.findByIdAndUpdate(
     user._id,
     {
@@ -319,6 +320,20 @@ const changeUserDetails = asyncHandler(async (req, res) => {
   const { name, username, email } = req.body;
   if (!name || !username || !email)
     throw new apiError(400, "All fields are required");
+
+  const usernameTaken = await User.findOne({ username: username });
+  
+  if (usernameTaken) {
+    return res.status(400).json(new apiError(400, "Username is already registered"));
+  }
+
+  const emailTaken = await User.findOne({ email: email });
+
+  if (emailTaken) {
+    return res.status(400).json(new apiError(400,  "Email is already registered"));
+    // throw new apiError(400, "Email is already registered");
+  }
+
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {
@@ -356,12 +371,31 @@ const sendMail = asyncHandler(async (req, res) => {
   res.status(200).cookie("maxAge", maxAge).json(new apiResponse(200, "Otp sent successfully"))
 })
 
-const getAllUsers = asyncHandler(async (req,res) => {
-  
+const getAllUsers = asyncHandler(async (req, res) => {
+
   const users = await User.find({}).select("-refreshToken -password");
-  res.status(200).json(new apiResponse(200, users, "All users fetched successfully")) 
+  res.status(200).json(new apiResponse(200, users, "All users fetched successfully"))
 })
 
+const uploadAvatar = asyncHandler(async (req,res) => {
+  const avatar = req?.file;
+  
+  const avatarCloudinary = await uploadonCloudinary(avatar?.path);
+
+  const avatarUrl = avatarCloudinary?.url;
+
+  if(avatarUrl){
+
+    const user = await User.findById(req.user.id);
+    user.avatar = avatarUrl;
+  
+    await user.save();
+    return res.status(200).json(new apiResponse(200,avatarUrl,"Suceesfully uploaded"))
+  }
+  
+    return res.status(200).json(new apiResponse(400,"","Something went wrong"))
+
+})
 
 
 export {
@@ -376,4 +410,5 @@ export {
   deleteAccount,
   sendMail,
   getAllUsers,
+  uploadAvatar
 };

@@ -23,9 +23,9 @@ server.on("connection", (client) => {
     socketHashMap[userId] = client.id;
   });
 
-  client.on("join-personalRoom",roomId=>{
+  client.on("join-personalRoom", roomId => {
     client.join(roomId)
-    client.to(roomId).emit("startHandshake",roomId);
+    client.to(roomId).emit("startHandshake", roomId);
   })
 
   client.on("joinProject", (projectId) => {
@@ -61,27 +61,31 @@ server.on("connection", (client) => {
     }
   });
 
-  client.on('call-user', ({ user, targetUserId, callerId, roomId }) => {    
+  client.on('call-user', ({ user, targetUserId, callerId, roomId }) => {
     const targetSocketId = socketHashMap[targetUserId];
     if (targetSocketId) {
       client.join(roomId);
-      server.to(targetSocketId).emit('incoming-call', { user ,callerId, roomId });
+      server.to(targetSocketId).emit('incoming-call', { user, callerId, roomId });
     }
   });
 
   client.on('sendOffer', ({ roomId, offer }) => {
-    client.to(roomId).emit("offer",{ roomId, offer })
+    client.to(roomId).emit("offer", { roomId, offer })
   });
 
   client.on('sendAnswer', ({ roomId, answer }) => {
-       client.to(roomId).emit("answer",{ roomId, answer })
+    client.to(roomId).emit("answer", { roomId, answer })
   });
 
-  client.on('ice-candidate', ({ targetUserId, candidate }) => {
-    const targetSocketId = socketHashMap[targetUserId];
-    if (targetSocketId) {
-      server.to(targetSocketId).emit('ice-candidate', { candidate });
-    }
+  client.on("teamAssigned", ({ members, taskToFindMember }) => {
+    members.forEach((memberId) => {
+      const targetSocketId = socketHashMap[memberId];
+      if (targetSocketId) {
+        console.log("sent ", targetSocketId);
+
+        client.to(targetSocketId).emit("recTask", taskToFindMember);
+      }
+    });
   });
 
   client.on("disconnect", () => {

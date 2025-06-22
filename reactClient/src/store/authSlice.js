@@ -20,9 +20,12 @@ const authSlice = createSlice({
         dispatchLogout:(state,action)=>{
             state.userState = false;
             state.userData = {};
+        },
+        dispatchAvatar:(state,action) => {
+            state.userData = {...state.userData, avatar: action.payload}; 
         }
     }
 })
 
-export const {dispatchLogin,dispatchLogout} = authSlice.actions;
+export const {dispatchLogin,dispatchLogout,dispatchAvatar} = authSlice.actions;
 export default authSlice.reducer;

@@ -17,7 +17,7 @@ import dashboardLoader from './loaderFunctions/dashboardLoader.js'
 import ProjectPage from './pages/ProjectPage.jsx'
 import Overview from './components/Overview.jsx'
 import taskLoader from './loaderFunctions/taskLoader.js'
-
+import ProfilePage from './pages/ProfilePage.jsx'
 import Task from './components/Task.jsx'
 import ProjectOverview from './components/ProjectOverview.jsx'
 import Team from './components/Team.jsx'
@@ -47,10 +47,10 @@ const router = createBrowserRouter(
           <Route path='teams' loader={teamLoader} element={<Team />} />
           <Route path='chat' element={<Chat />} />
           <Route path='videocall' element={<VideoCall />} />
-
         </Route>
 
       </Route>
+       <Route path='/profile' element={<ProfilePage />} />
     </Route>
   )
 )

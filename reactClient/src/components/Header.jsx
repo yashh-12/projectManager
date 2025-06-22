@@ -10,20 +10,16 @@ function Header() {
   const navigate = useNavigate();
   const userData = useSelector((state) => state.auth.userData);
   const dispatch = useDispatch();
-  const [notificationCount,setNotificationCount] = useState(0)
+  const [notificationCount, setNotificationCount] = useState(0);
 
-  const fetchNotificationCount = async()=>{
-    const unreadNotificationCount = await getUnreadNotificationCount()
-    console.log(unreadNotificationCount);
-    
-    setNotificationCount(unreadNotificationCount)
-  }
+  const fetchNotificationCount = async () => {
+    const count = await getUnreadNotificationCount();
+    setNotificationCount(count);
+  };
 
-  useEffect(()=>{
-    fetchNotificationCount()
-  },[])
-
-  
+  useEffect(() => {
+    fetchNotificationCount();
+  }, []);
 
   const handleLogout = async () => {
     const res = await logout();
@@ -35,31 +31,38 @@ function Header() {
 
   return (
     <header className="w-full flex items-center justify-between px-6 py-4 bg-gray-900 shadow-md text-white">
-      <div className="flex items-center gap-3 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-full cursor-pointer transition-shadow duration-200 shadow-md">
-        <img
-          src={
-            userData?.avatar ||
-            'https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff'
-          }
-          alt="User"
-          className="w-9 h-9 rounded-full object-cover"
-        />
-        <span className="text-sm font-semibold">{userData?.username || 'User'}</span>
-      </div>
+      <div className="flex items-center gap-3">
+        <div
+          className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-full cursor-pointer transition-shadow duration-200 shadow-md"
+          onClick={() => navigate("/projects")}
+        >
+          <img
+            src="/project-management.png"
+            className="w-8 h-8 object-cover"
+          />
+        </div>
 
-      <div className="flex-1 mx-6 relative">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-300 text-sm"
-        />
+        <div
+          className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-full cursor-pointer transition-shadow duration-200 shadow-md"
+          onClick={() => navigate("/profile")}
+        >
+          <img
+            src={
+              userData?.avatar ||
+              'https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff'
+            }
+            alt="User"
+            className="w-8 h-8 rounded-full object-cover"
+          />
+          <span className="text-base font-medium">{userData?.username || 'User'}</span>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="relative cursor-pointer">
-          <Bell className="w-6 h-6 text-white" />
+        <div className="relative cursor-pointer hover:scale-105 transition-transform duration-150">
+          <Bell className="w-5 h-5 text-white" />
           {notificationCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">
               {notificationCount}
             </span>
           )}
@@ -67,7 +70,7 @@ function Header() {
 
         <button
           onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition duration-200"
+          className="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg shadow-md transition duration-200 text-sm"
         >
           Logout
         </button>

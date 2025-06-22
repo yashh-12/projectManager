@@ -7,22 +7,15 @@ import PeerService from '../services/PeerService';
 import useStream from '../provider/StreamProvide';
 
 function ProjectPage() {
+  
   const [flashMsg, setFlashMsg] = useState('');
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [incomingCallData, setIncomingCallData] = useState('');
   const [remoteStream, setRemoteStream] = useState();
   const { stream, setStream } = useStream()
-  console.log("ss" , stream);
   
   const [myStream, setMyStream] = useState();
-
   
-  useEffect(() => {
-    if (stream) {
-      setMyStream(stream);
-  }
-}, [stream]);
-
   const navigate = useNavigate();
   const { projectId } = useParams();
   const { client } = useSocket();
@@ -34,18 +27,31 @@ function ProjectPage() {
 
   const getMediaPermission = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      console.log('Got Media Stream:', stream);
-      return stream;
+      const collectstream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      console.log('Got Media Stream:', collectstream);
+      return collectstream;
     } catch (err) {
       console.error('Error accessing media devices.', err);
       setFlashMsg('Please allow microphone and camera');
+
       setTimeout(() => {
         setFlashMsg('');
       }, 4000);
       return;
     }
   };
+
+  const sendStreams = useCallback(async () => {
+    if (!stream) {
+      console.log("Stream not available when trying to send tracks",myStream , " ",stream);
+      return;
+    }
+  
+    for (const track of stream.getTracks()) {
+      await PeerService.peer.addTrack(track, stream);
+    }
+  }, [stream]);
+
 
   const handleMessage = useCallback(() => {
     setUnreadChatCount((prev) => prev + 1);
@@ -59,48 +65,52 @@ function ProjectPage() {
     setIncomingCallData(data);
   }, []);
 
-  const handleStartHandshake = useCallback(async (roomId) => {
 
+
+  const handleStartHandshake = useCallback(async (roomId) => {
+    
     const offer = await PeerService.getOffer();
     client.emit("sendOffer", { offer, roomId });
     
   }, [client]);
 
+
+
   const handleOffer = useCallback(async ({ roomId, offer }) => {
-    console.log("offer came", offer);
 
     const answer = await PeerService.getAnswer(offer);
-    
     client.emit("sendAnswer", { roomId, answer });
+    sendStreams();
   }, [client]);
 
-  const sendStreams = useCallback(() => {
-    for (const track of myStream.getTracks()) {
-      PeerService.peer.addTrack(track, myStream);
-    }
-  }, [myStream]);
 
+
+  
+  
+  
   const handleAnswer = useCallback(
     async ({ roomId, answer }) => {
       await PeerService.setLocalDescription(answer);
+      setStream(stream)
       setMyStream(stream)
-      console.log("Call Accepted!");
       sendStreams();
+      console.log("Call Accepted!");
     },
     [sendStreams]
   );
+  
+  
 
 
   useEffect(() => {
-    
     PeerService.peer.addEventListener("track", async (ev) => {
       const remoteStream = ev.streams;
-      console.log("GOT TRACKS!!");
       setRemoteStream(remoteStream[0]);
-      console.log(remoteStream);
+      console.log("remote stream ",remoteStream);
       
     });
-  }, [myStream,remoteStream]);    
+  }, [stream,remoteStream]);    
+
 
 
   useEffect(() => {
@@ -133,8 +143,9 @@ function ProjectPage() {
 
   const handleCall = async () => {
     const collectStream = await getMediaPermission();    
-    setMyStream(collectStream);
-    console.log("coll ste",myStream);
+    setStream(collectStream)
+    setMyStream(collectStream)
+    console.log("collected stream ",collectStream);
     
     if (collectStream) {
       client.emit("join-personalRoom", incomingCallData.roomId);
@@ -200,7 +211,7 @@ function ProjectPage() {
           ))}
         </div>
       </div>
-     {(myStream && remoteStream) && (
+     {(stream && remoteStream) && (
         <div className="relative w-full h-[500px] bg-black flex">
           {remoteStream ? (
             <video
@@ -212,10 +223,10 @@ function ProjectPage() {
           ) : (
             <div className="w-1/2 h-full bg-black" />
           )}
-          {myStream && (
+          {stream && (
             <video
               className="w-1/2 h-full object-cover border-l-2 border-white"
-              ref={video => video && (video.srcObject = myStream)}
+              ref={video => video && (video.srcObject = stream)}
               muted
               autoPlay
               playsInline

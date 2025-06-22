@@ -128,6 +128,25 @@ const createNewTeam = asyncHandler(async (req, res) => {
         ))
 })
 
+
+const getTeamMembers = asyncHandler(async (req, res) => {
+    const { teamID } = req.params;
+    
+    const memberships = await TeamMembership.find({ teamID }).select("member");
+
+    const memberIds = memberships.map((m) => m.member.toString());
+
+    
+    return res
+        .status(200)
+        .json(new apiResponse(
+            200,
+            memberIds,
+            "all team members"
+        ))
+
+})
+
 const removeATeam = asyncHandler(async (req, res) => {
     const { teamId } = req.params
 
@@ -329,5 +348,6 @@ export {
     removeTeamMembers,
     getTeamData,
     getAllUnassignedUsers,
-    getAssignedUsers
+    getAssignedUsers,
+    getTeamMembers
 }

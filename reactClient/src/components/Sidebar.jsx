@@ -161,9 +161,6 @@ function Sidebar() {
                             )}
                         </div>
 
-                        <button className="w-full mt-4 py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition">
-                            Join a Project
-                        </button>
                     </div>
                 </nav>
             </aside>

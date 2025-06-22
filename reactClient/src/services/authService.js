@@ -87,7 +87,7 @@ const resendOtp = async (emailId) => {
    })
    return res.json()
  } catch (error) {
-  console.log(error);
+  console.log(error?.message);
 
  }
 
@@ -106,8 +106,8 @@ const getUserDetails = async () => {
  
    return res.json()
  } catch (error) {
-  console.log(error);
-
+  // console.log(error);
+  return error
  }
 } 
 
@@ -128,6 +128,72 @@ const getAllUser = async () => {
 
 }
 
+const changePassword = async (usernameOrEmail,password,newPassword) => {
+  try {
+    const res = await fetch("http://localhost:8080/api/auth/changePassword", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body:JSON.stringify({
+        usernameOrEmail,
+        password,
+        newPassword
+        
+      }),
+      credentials: "include",
+    })
+    return res.json()
+  } catch (error) {
+    console.log(error);
+
+  }
+
+}
+
+const changeUserDetails = async (name,username,email) => {
+  try {
+    const res = await fetch("http://localhost:8080/api/auth/changeUserDetails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body:JSON.stringify({
+        name,
+        username,
+        email
+        
+      }),
+      credentials: "include",
+    })
+    return res.json()
+  } catch (error) {
+    console.log(error.message);
+
+  }
+
+}
+
+const uploadAvatar = async (avatar) => {
+  try {
+    const formData = new FormData();
+    formData.append("avatar", avatar); // 👈 MUST match multer.single("avatar")
+
+    const res = await fetch("http://localhost:8080/api/auth/uploadAvatar", {
+      method: "POST",
+      credentials: "include", // ✅ sends cookies for session auth
+      body: formData,
+    });
+
+    return await res.json();
+  } catch (error) {
+    console.error("Upload error:", error.message);
+    return { success: false, message: error.message };
+  }
+};
+
+
+
 export {
   login,
   logout,
@@ -136,4 +202,7 @@ export {
   resendOtp,
   getUserDetails,
   getAllUser,
+  changePassword,
+  changeUserDetails,
+  uploadAvatar
 }

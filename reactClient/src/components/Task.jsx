@@ -8,9 +8,12 @@ import { getAllTasks, getAllTeams } from "../services/projectService.js"
 import TaskDetail from './TaskDetail.jsx';
 import FlashMsg from './FlashMsg.jsx';
 import useSocket from '../provider/SocketProvider.jsx';
+import { createNotification } from '../services/notificationService.js';
+import { getTeamMembers } from '../services/teamService.js';
 
 function Task() {
 
+    const {client} = useSocket();
 
     const [addTaskForm, setAddTaskForm] = useState(false);
     const [taskName, setTaskName] = useState('');
@@ -45,6 +48,23 @@ function Task() {
 
     console.log("owner ", isProjectOwner);
 
+ useEffect(() => {
+
+    if(!client)
+        return;
+
+  const handleNewTask = (data) => {
+    console.log("this ran ",data);
+    
+    // setAllTasks(prev => [...prev, data]);
+  };
+
+  client.on("recTask", handleNewTask);
+
+  return () => {
+    client.off("recTask", handleNewTask);
+  };
+}, []);
 
 
     useEffect(() => {
@@ -143,9 +163,20 @@ function Task() {
             setAllTasks(allTasks.map(task =>
                 task._id === formTaskId ? { ...task, team: { _id: selectedTeam, name: selectedTeamName } } : task
             ));
+            setNotification("Task assigned successfully")
+            
+            console.log("selected ",selectedTeam);
+            
+            const res2 = await getTeamMembers(selectedTeam);
+            const members = res2?.data
+            console.log("Tej ",res2);
+            
+            // await createNotification(`Task ${taskToFindMember.name} is assigned to your team ${taskToFindMember?.team?.name}`)
+            
+            client.emit("teamAssigned",{members,selectedTeamName})
             setFormTaskID(null)
             setSelectedTeam(null)
-            setNotification("Task assigned successfully")
+
             setTimeout(() => {
                 setNotification("")
             }, 2000)

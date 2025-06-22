@@ -129,7 +129,23 @@ const getAllAssignedUsers = async (teamId) => {
     }
 }
 
+const getTeamMembers = async (teamID) => {
+    try {
+        const res = await fetch(`http://localhost:8080/api/teams/${teamID}/getTeamMembers`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            
+            credentials: "include",
+        })
 
+        return res.json()
+    } catch (error) {
+        console.log(error);
+
+    }
+}
 
 export {
     createTeam,
@@ -139,5 +155,6 @@ export {
     // modify,
     getTeamData,
     getUnassignedUsers,
-    getAllAssignedUsers
+    getAllAssignedUsers,
+    getTeamMembers
 }
