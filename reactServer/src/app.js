@@ -25,6 +25,7 @@ server.on("connection", (client) => {
 
   client.on("join-personalRoom",roomId=>{
     client.join(roomId)
+    client.to(roomId).emit("startHandshake",roomId);
   })
 
   client.on("joinProject", (projectId) => {
@@ -68,18 +69,12 @@ server.on("connection", (client) => {
     }
   });
 
-  client.on('offer', ({ targetUserId, offer }) => {
-    const targetSocketId = socketHashMap[targetUserId];
-    if (targetSocketId) {
-      server.to(targetSocketId).emit('offer', { offer });
-    }
+  client.on('sendOffer', ({ roomId, offer }) => {
+    client.to(roomId).emit("offer",{ roomId, offer })
   });
 
-  client.on('answer', ({ targetUserId, answer }) => {
-    const targetSocketId = socketHashMap[targetUserId];
-    if (targetSocketId) {
-      server.to(targetSocketId).emit('answer', { answer });
-    }
+  client.on('sendAnswer', ({ roomId, answer }) => {
+       client.to(roomId).emit("answer",{ roomId, answer })
   });
 
   client.on('ice-candidate', ({ targetUserId, candidate }) => {

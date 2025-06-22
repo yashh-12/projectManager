@@ -25,6 +25,7 @@ import teamLoader from './loaderFunctions/teamLoader.js'
 import overViewLoader from './loaderFunctions/overViewLoader.js'
 import Chat from './components/Chat.jsx'
 import { SocketProvider } from './provider/SocketProvider.jsx'
+import { StreamProvider } from './provider/StreamProvide.jsx'
 import VideoCall from './pages/VideoCall.jsx'
 
 
@@ -57,7 +58,9 @@ const router = createBrowserRouter(
 createRoot(document.getElementById('root')).render(
   <Provider store={store}>
     <SocketProvider>
-      <RouterProvider router={router} />
+      <StreamProvider>
+        <RouterProvider router={router} />
+      </StreamProvider>
     </SocketProvider>
   </Provider>
 )

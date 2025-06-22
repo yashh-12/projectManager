@@ -1,17 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Outlet, useParams, NavLink, useNavigate } from 'react-router-dom';
 import { getUnreadChatCount } from '../services/chatService';
 import useSocket from '../provider/SocketProvider';
 import FlashMsg from '../components/FlashMsg';
+import PeerService from '../services/PeerService';
+import useStream from '../provider/StreamProvide';
 
 function ProjectPage() {
   const [flashMsg, setFlashMsg] = useState('');
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [incomingCallData, setIncomingCallData] = useState('');
+  const [remoteStream, setRemoteStream] = useState();
+  const { stream, setStream } = useStream()
+  console.log("ss" , stream);
+  
+  const [myStream, setMyStream] = useState();
+
+  
+  useEffect(() => {
+    if (stream) {
+      setMyStream(stream);
+  }
+}, [stream]);
 
   const navigate = useNavigate();
   const { projectId } = useParams();
-  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const { client } = useSocket();
-  const [incomingCallData, setIncomingCallData] = useState("");
 
   const fetchUnreadNotificationCount = async () => {
     const count = await getUnreadChatCount(projectId);
@@ -29,48 +43,104 @@ function ProjectPage() {
       setTimeout(() => {
         setFlashMsg('');
       }, 4000);
-      return ;
+      return;
     }
   };
+
+  const handleMessage = useCallback(() => {
+    setUnreadChatCount((prev) => prev + 1);
+  }, []);
+
+  const handleMinusRead = useCallback((data) => {
+    setUnreadChatCount((prev) => prev - data);
+  }, []);
+
+  const handleIncomingCall = useCallback((data) => {
+    setIncomingCallData(data);
+  }, []);
+
+  const handleStartHandshake = useCallback(async (roomId) => {
+
+    const offer = await PeerService.getOffer();
+    client.emit("sendOffer", { offer, roomId });
+    
+  }, [client]);
+
+  const handleOffer = useCallback(async ({ roomId, offer }) => {
+    console.log("offer came", offer);
+
+    const answer = await PeerService.getAnswer(offer);
+    
+    client.emit("sendAnswer", { roomId, answer });
+  }, [client]);
+
+  const sendStreams = useCallback(() => {
+    for (const track of myStream.getTracks()) {
+      PeerService.peer.addTrack(track, myStream);
+    }
+  }, [myStream]);
+
+  const handleAnswer = useCallback(
+    async ({ roomId, answer }) => {
+      await PeerService.setLocalDescription(answer);
+      setMyStream(stream)
+      console.log("Call Accepted!");
+      sendStreams();
+    },
+    [sendStreams]
+  );
+
+
+  useEffect(() => {
+    
+    PeerService.peer.addEventListener("track", async (ev) => {
+      const remoteStream = ev.streams;
+      console.log("GOT TRACKS!!");
+      setRemoteStream(remoteStream[0]);
+      console.log(remoteStream);
+      
+    });
+  }, [myStream,remoteStream]);    
+
 
   useEffect(() => {
     if (!client) return;
 
-    const handleMessage = () => {
-      setUnreadChatCount((prev) => prev + 1);
-    };
-
-    const handleMinusRead = (data) => {
-      setUnreadChatCount((prev) => prev - data);
-    };
-
-    const handleIncomingCall = (data) => {
-      setIncomingCallData(data);
-    };
-
     client.on("recMessage", handleMessage);
     client.on("minusRead", handleMinusRead);
     client.on("incoming-call", handleIncomingCall);
+    client.on("startHandshake", handleStartHandshake);
+    client.on("offer", handleOffer);
+    client.on("answer", handleAnswer);
 
     return () => {
       client.off("recMessage", handleMessage);
       client.off("minusRead", handleMinusRead);
       client.off("incoming-call", handleIncomingCall);
+      client.off("startHandshake", handleStartHandshake);
+      client.off("offer", handleOffer);
+      client.off("answer", handleAnswer);
     };
-  }, [client]);
-
+  }, [
+    client,
+    handleMessage,
+    handleMinusRead,
+    handleIncomingCall,
+    handleStartHandshake,
+    handleOffer,
+    handleAnswer,
+  ]);
 
   const handleCall = async () => {
-    const stream = await getMediaPermission();
-    console.log(stream);
+    const collectStream = await getMediaPermission();    
+    setMyStream(collectStream);
+    console.log("coll ste",myStream);
     
-    if (stream) {
-
+    if (collectStream) {
       client.emit("join-personalRoom", incomingCallData.roomId);
       setIncomingCallData("");
-      navigate(`/projects/${projectId}/videocall`);
     }
-  }
+  };
 
   useEffect(() => {
     fetchUnreadNotificationCount();
@@ -78,7 +148,7 @@ function ProjectPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white w-full font-inter">
-      <FlashMsg message={flashMsg} setMessage={() => setFlashMsg("")}/>
+      <FlashMsg message={flashMsg} setMessage={() => setFlashMsg("")} />
       {incomingCallData &&
         <div className="bg-gray-800 border border-blue-500 rounded-xl mx-8 my-4 p-6 flex justify-between items-center shadow-lg">
           <div>
@@ -121,7 +191,6 @@ function ProjectPage() {
               }
             >
               {item}
-
               {item === 'chat' && unreadChatCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full shadow-md">
                   {unreadChatCount}
@@ -131,6 +200,29 @@ function ProjectPage() {
           ))}
         </div>
       </div>
+     {(myStream && remoteStream) && (
+        <div className="relative w-full h-[500px] bg-black flex">
+          {remoteStream ? (
+            <video
+              className="w-1/2 h-full object-cover"
+              ref={video => video && (video.srcObject = remoteStream)}
+              autoPlay
+              playsInline
+            />
+          ) : (
+            <div className="w-1/2 h-full bg-black" />
+          )}
+          {myStream && (
+            <video
+              className="w-1/2 h-full object-cover border-l-2 border-white"
+              ref={video => video && (video.srcObject = myStream)}
+              muted
+              autoPlay
+              playsInline
+            />
+          )}
+        </div>
+      )}
 
       <main className="flex-1 w-full px-8 py-6 bg-gray-900">
         <Outlet />

@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import FlashMsg from './FlashMsg';
 import { da } from 'date-fns/locale';
+import useStream from '../provider/StreamProvide';
 
 function ChatArea({ selectedUser }) {
   const navigate = useNavigate();
@@ -16,11 +17,14 @@ function ChatArea({ selectedUser }) {
   const messagesEndRef = useRef(null);
   const userData = useSelector(state => state.auth.userData);
   const [confirmMakeCall, setConfirmMakeCall] = useState(false);
+  const {stream ,setStream} = useStream();
 
   const getMediaPermission = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      console.log('Got Media Stream:', stream);
+      const myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      console.log('Got Media Stream:', myStream);
+      setStream(myStream)   
+         
       setConfirmMakeCall(true);
     } catch (err) {
       console.error('Error accessing media devices.', err);
@@ -120,7 +124,6 @@ function ChatArea({ selectedUser }) {
                     roomId: `call-${Date.now()}-${Math.floor(Math.random() * 1000)}`
                   });
                   setConfirmMakeCall(false);
-                  navigate(`/projects/${projectId}/videocall`)
                 }}
                 className="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-black text-lg font-medium"
               >
