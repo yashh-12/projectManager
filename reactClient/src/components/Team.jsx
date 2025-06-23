@@ -8,8 +8,11 @@ import { getAllTeams } from '../services/projectService.js';
 import { getAllUser } from '../services/authService.js';
 import { getUnassignedUsers } from '../services/teamService.js';
 import TeamList from './TeamList.jsx';
+import useSocket from '../provider/SocketProvider.jsx';
 
 function Team() {
+
+  const { client } = useSocket();
   const dispatch = useDispatch();
   const [addTeamForm, setAddTeamForm] = useState(false);
   const [teamName, setTeamName] = useState('');
@@ -18,7 +21,7 @@ function Team() {
   console.log(aTeams);
 
   const userData = useSelector(state => state?.auth?.userData)
-  const isProjectOwner = userData?._id == aTeams?.data[0]?.project?.owner;
+  const isProjectOwner = userData?.owner;
 
   console.log(isProjectOwner);
 
@@ -39,6 +42,26 @@ function Team() {
   useEffect(() => {
     setAllUsers(originalUsers.filter(user => user?.name?.toLowerCase().includes(searchText.toLowerCase() || '')))
   }, [searchText])
+
+  useEffect(() => {
+
+    if (!client)
+      return;
+
+    client.on("assignMember", (data) => {
+      setAllTeams(prev => [...prev, data])
+    })
+
+    client.on("removeFromTeam", (data) => {
+      setAllTeams(prev => prev.filter(ele => ele._id != data))
+    })
+
+    client.on("deleteTeam", (data) => {
+      setAllTeams(prev => prev.filter(ele => ele._id != data._id))
+    })
+
+
+  }, [client])
 
   useEffect(() => {
     if (assignMemberForm || removeMemberForm) {
@@ -65,9 +88,18 @@ function Team() {
   const handleDelete = async (teamId) => {
     console.log('Team Deleted:', teamId);
     const res = await deleteTeam(teamId);
-    console.log(res);
+    // console.log(res);
 
-    if (res?.success) {
+    if (res.success) {
+      console.log(allTeams);
+
+      const teamToDelete = allTeams.find(team => team._id == teamId)
+
+      console.log(teamToDelete);
+      const members = teamToDelete.team_members.map(ele => ele._id) || []
+      console.log(members);
+
+      client.emit("deletedTeam", { teamToDelete, members })
       setAllTeams(allTeams.filter(team => team._id !== teamId));
       setDropdownIndex(null)
     }
@@ -90,20 +122,28 @@ function Team() {
 
   const handleAssignForm = async (e) => {
     e.preventDefault();
-    console.log(selectedUsers);
-    const res = await assignMemberToTeam(selectedTeam, selectedUsers);
-    console.log(res);
 
-    setSelectedUsers([]);
-    setAllUsers([])
-    setOriginalUsers([])
-    setSelectedTeam(null);
-    setAssignMemberForm(false);
-    setDropdownIndex(null)
+    const res = await assignMemberToTeam(selectedTeam, selectedUsers);
+    if (res.success) {
+      const teamToAdd = allTeams.find(ele => ele._id == selectedTeam)
+
+      const newTeam = { ...teamToAdd, team_members: res.data }
+
+      const members = res?.data?.map(ele => ele._id)
+
+      setAllTeams(prev => prev.map(ele => selectedTeam ? { ...ele, team_members: res?.data } : ele))
+      client.emit("assignedMembers", { newTeam, members })
+
+      setSelectedUsers([]);
+      setAllUsers([])
+      setOriginalUsers([])
+      setSelectedTeam(null);
+      setAssignMemberForm(false);
+      setDropdownIndex(null)
+    }
   }
 
   const handleRemoveMember = async (teamId) => {
-    console.log('Remove Member from Team:', teamId);
     const res = await getAllAssignedUsers(teamId)
     if (res?.success) {
       setAllUsers(res?.data ?? [])
@@ -111,7 +151,6 @@ function Team() {
       setSelectedTeam(teamId);
       setRemoveMemberForm(true);
     }
-    console.log(res);
 
   };
 
@@ -128,7 +167,9 @@ function Team() {
     const res = await removeMemberToTeam(selectedTeam, selectedUsers);
     if (res?.success) {
       console.log('Member removed successfully:', res?.data);
+      client.emit("removedFromTeam", { teamId: selectedTeam, members: res?.data?.members })
       setRemoveMemberForm(false);
+      setSelectedUsers([])
       setDropdownIndex(null);
       setAllUsers([])
 
@@ -148,7 +189,6 @@ function Team() {
 
       {addTeamForm && (
         <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          {/* Lock background scroll */}
           {document.body.classList.add("overflow-hidden")}
           <form
             onSubmit={handleAddTeam}

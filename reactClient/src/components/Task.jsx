@@ -1,19 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLoaderData, useParams } from 'react-router-dom';
 import { addTask, assignTaskToTeam, deleteTask, removeATeam, modifyTask, getTaskData, toggleTaskStatus } from '../services/taskService.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { setLoaderTrue, setLoaderFalse } from '../store/uiSlice.js';
 import { FaEllipsisV, FaSadCry } from 'react-icons/fa';
-import { getAllTasks, getAllTeams } from "../services/projectService.js"
+import { getAllTasks, getAllTeams, getProjectMetaData } from "../services/projectService.js"
 import TaskDetail from './TaskDetail.jsx';
 import FlashMsg from './FlashMsg.jsx';
 import useSocket from '../provider/SocketProvider.jsx';
 import { createNotification } from '../services/notificationService.js';
 import { getTeamMembers } from '../services/teamService.js';
+import { dispatchOwnerFalse, dispatchOwnerTrue } from '../store/authSlice.js';
 
 function Task() {
 
-    const {client} = useSocket();
+    const { projectId } = useParams();
+    const dispatch = useDispatch()
+
+    const { client } = useSocket();
 
     const [addTaskForm, setAddTaskForm] = useState(false);
     const [taskName, setTaskName] = useState('');
@@ -23,7 +27,6 @@ function Task() {
 
     const [deadline, setDeadline] = useState(oneWeekFromNow);
     const [details, setDetails] = useState('');
-    const { projectId } = useParams();
     const tasks = useLoaderData()
     console.log("tasks", tasks);
 
@@ -31,7 +34,6 @@ function Task() {
     const [allTeams, setAllTeams] = useState([])
     const [assignForm, setAssignForm] = useState(false)
     const [selectedTeam, setSelectedTeam] = useState(null)
-    const [selectedTeamName, setSelectedTeamName] = useState("")
     const [taskDetails, setTaskDetails] = useState({})
     const [showTaskDetails, setShowTaskDetails] = useState(false)
     const [formTaskId, setFormTaskID] = useState(null)
@@ -42,30 +44,10 @@ function Task() {
     const [notification, setNotification] = useState("")
 
     const userData = useSelector(state => state?.auth?.userData)
-    console.log(userData);
 
-    const isProjectOwner = userData?._id == allTasks[0]?.project?.owner;
-
-    console.log("owner ", isProjectOwner);
-
- useEffect(() => {
-
-    if(!client)
-        return;
-
-  const handleNewTask = (data) => {
-    console.log("this ran ",data);
+    const isProjectOwner = userData?.owner;
+    console.log(isProjectOwner);
     
-    // setAllTasks(prev => [...prev, data]);
-  };
-
-  client.on("recTask", handleNewTask);
-
-  return () => {
-    client.off("recTask", handleNewTask);
-  };
-}, []);
-
 
     useEffect(() => {
         if (assignForm) {
@@ -77,7 +59,7 @@ function Task() {
 
     useEffect(() => {
         setAllTeams(originalTeam?.filter(team => team.name.includes(searchText.toLowerCase() || "")))
-    },[searchText])
+    }, [searchText])
 
     const handleAddTask = async (e) => {
         e.preventDefault();
@@ -116,7 +98,10 @@ function Task() {
 
         if (res.success) {
             console.log('Task modified successfully:', res);
+            const taskTomodify = allTasks.find(task => task._id === formTaskId)
+            const modifiedTask = { ...taskTomodify, task: taskName, details: details, deadline: deadline }
             setAllTasks(allTasks.map(task => task._id === formTaskId ? { ...task, task: taskName, details: details, deadline: deadline } : task))
+            client.emit("modifyTask", { task: modifiedTask, members: modifiedTask.teamMemberIds })
             setModifyForm(false);
             setTaskName('');
             setDetails('');
@@ -135,12 +120,14 @@ function Task() {
         if (res?.success) {
             console.log('Task deleted successfully:', res.data);
             setDropdownIndex(null)
+            const taskTodelete = allTasks.find(task => task._id == taskId)
+            client.emit("deletedTask", { taskId, members: taskTodelete.teamMemberIds || [] })
             setNotification("Task deleted successfully")
+            setAllTasks(allTasks.filter(task => task._id !== taskId))
             setTimeout(() => {
                 setNotification("")
             }, 2000)
         }
-        setAllTasks(allTasks.filter(task => task._id !== taskId))
     };
 
     const handleAssignTeam = async () => {
@@ -156,24 +143,40 @@ function Task() {
 
     const handleAssignTeamToTask = async (e) => {
         e.preventDefault();
-        const res = await assignTaskToTeam(formTaskId, selectedTeam);
+        const res = await assignTaskToTeam(formTaskId, selectedTeam._id);
         if (res.success) {
             console.log('Task assigned successfully:', res);
             setAssignForm(false);
+
+            const targetedTask = allTasks.find(task =>
+                task._id === formTaskId
+            )
+
+            const members = selectedTeam.team_members.map(member => member._id);
             setAllTasks(allTasks.map(task =>
-                task._id === formTaskId ? { ...task, team: { _id: selectedTeam, name: selectedTeamName } } : task
+                task._id === formTaskId ? { ...task, team: { _id: selectedTeam._id, name: selectedTeam.name }, teamMemberIds: members, project: selectedTeam?.project } : task
             ));
+
             setNotification("Task assigned successfully")
-            
-            console.log("selected ",selectedTeam);
-            
-            const res2 = await getTeamMembers(selectedTeam);
-            const members = res2?.data
-            console.log("Tej ",res2);
-            
-            // await createNotification(`Task ${taskToFindMember.name} is assigned to your team ${taskToFindMember?.team?.name}`)
-            
-            client.emit("teamAssigned",{members,selectedTeamName})
+
+
+            console.log("selected ", targetedTask);
+
+            const updatedTargetedTask = {
+                ...targetedTask,
+                team: {
+                    _id: selectedTeam._id,
+                    name: selectedTeam.name,
+                    team_members: selectedTeam.team_members
+                },
+                project: selectedTeam.project,
+                teamMemberIds: members
+            };
+            console.log(members);
+
+            // await createNotification(`Task ${targetedTask.name} is assigned to your team ${selectedTeam?.team?.name}`)
+
+            client.emit("teamAssigned", { members, updatedTargetedTask })
             setFormTaskID(null)
             setSelectedTeam(null)
 
@@ -190,8 +193,10 @@ function Task() {
         const res = await removeATeam(taskId)
         if (res.success) {
             console.log('Team removed successfully:', res);
+            const taskTobeRemoved = allTasks.find(task => task._id == taskId);
             setAllTasks(allTasks.map(task => task._id === taskId ? { ...task, team: null } : task))
-            console.log(allTasks);
+            const members = taskTobeRemoved.teamMemberIds || [];
+            client.emit("removeTeam", { taskId, members })
             setNotification("Team removed successfully")
             setTimeout(() => {
                 setNotification("")
@@ -408,10 +413,9 @@ function Task() {
                                                 type="radio"
                                                 name="team"
                                                 value={ele._id}
-                                                checked={selectedTeam === ele._id}
+                                                checked={selectedTeam === ele}
                                                 onChange={() => {
-                                                    setSelectedTeam(ele._id);
-                                                    setSelectedTeamName(ele.name);
+                                                    setSelectedTeam(ele);
                                                 }}
                                                 className="w-5 h-5 accent-blue-600"
                                             />

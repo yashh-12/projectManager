@@ -85,58 +85,71 @@ const commonTeamDataPipeline = (teamId) => [
 
 
 const createNewTeam = asyncHandler(async (req, res) => {
-    const { projectId } = req.params
-    const { name } = req.body
+    const { projectId } = req.params;
+    const { name } = req.body;
 
     if (!isValidObjectId(projectId)) {
-        throw new apiError(400, "Invalid project ID")
+        throw new apiError(400, "Invalid project ID");
     }
 
     if (!name || !name.trim()) {
-        throw new apiError(400, "Team name is required")
+        throw new apiError(400, "Team name is required");
     }
 
-    const project = await Project.findById(projectId)
+    const project = await Project.findById(projectId).lean();
 
     if (!project) {
-        throw new apiError(404, "Project not found")
+        throw new apiError(404, "Project not found");
     }
 
-    const teamWithSameName = await Team.findOne({ $and: [{ name: name.toLowerCase() }, { project: new mongoose.Types.ObjectId(projectId) }] })
+    const teamWithSameName = await Team.findOne({
+        name: name.toLowerCase(),
+        project: projectId
+    });
 
     if (teamWithSameName) {
-        throw new apiError(400, "Team with same name already exists in the project")
+        throw new apiError(400, "Team with same name already exists in the project");
     }
 
-    const team = await Team.create(
-        {
-            name: name.toLowerCase(),
-            project: projectId
-        }
-    )
+    const team = await Team.create({
+        name: name.toLowerCase(),
+        project: projectId
+    });
 
     if (!team) {
-        throw new apiError(500, "Something went wrong while creating new team")
+        throw new apiError(500, "Something went wrong while creating new team");
     }
 
-    return res
-        .status(200)
-        .json(new apiResponse(
-            200,
-            team,
-            "New team created"
-        ))
-})
+    const fullTeam = {
+        _id: team._id,
+        name: team.name,
+        project: {
+            _id: project._id,
+            name: project.name,
+            deadline: project.deadline || null,
+            isCompleted: project.isCompleted || false,
+            owner: project.owner
+        },
+        team_members: [],
+        assigned_tasks: []
+    };
+
+    return res.status(200).json(new apiResponse(
+        200,
+        fullTeam,
+        "New team created"
+    ));
+});
 
 
 const getTeamMembers = asyncHandler(async (req, res) => {
     const { teamID } = req.params;
-    
+
     const memberships = await TeamMembership.find({ teamID }).select("member");
 
     const memberIds = memberships.map((m) => m.member.toString());
 
-    
+
     return res
         .status(200)
         .json(new apiResponse(
@@ -222,65 +235,75 @@ const addTeamMembers = asyncHandler(async (req, res) => {
     const membersToAdd = members.filter((member) => !existingMembersIds.includes(member.toString()))
 
     if (membersToAdd.length > 0) {
-        membersToAdd.forEach(async (member) => {
-            const membership = await TeamMembership.create(
-                {
-                    teamID: teamId,
-                    member: member
-                }
-            )
-        })
+        await Promise.all(
+
+            membersToAdd.map((member) => {
+                TeamMembership.create(
+                    {
+                        teamID: teamId,
+                        member: member
+                    }
+                )
+            }))
     }
 
+    const users = await Promise.all(
+
+        members.map((member) => {
+            return User.findOne(
+                {
+
+                    _id: member
+                }
+            )
+        }))
 
 
-    const team = await Team.aggregate(
-        commonTeamDataPipeline(teamId)
-    )
 
     return res
         .status(200)
         .json(new apiResponse(
             200,
-            team,
+            users,
             "Team members added"
         ))
 })
 
 const removeTeamMembers = asyncHandler(async (req, res) => {
-    const { teamId } = req.params
-    const { members } = req.body
+    const { teamId } = req.params;
+    const { members } = req.body;
 
     if (!isValidObjectId(teamId)) {
-        throw new apiError(400, "Invalid team ID")
+        throw new apiError(400, "Invalid team ID");
     }
 
     if (!members || !members.length) {
-        throw new apiError(400, "Members are required")
+        throw new apiError(400, "Members are required");
     }
 
-    const doesTeamExist = await Team.findById(teamId)
+    const doesTeamExist = await Team.findById(teamId);
 
     if (!doesTeamExist) {
-        throw new apiError(404, "Team not found")
+        throw new apiError(404, "Team not found");
     }
 
-    members.forEach(async (member) => {
-        await TeamMembership.deleteOne({ member: new mongoose.Types.ObjectId(member) })
-    })
 
-    const team = await Team.aggregate(
-        commonTeamDataPipeline(teamId)
-    )
+    await Promise.all(
+        members.map(member =>
+            TeamMembership.deleteOne({
+                teamID: teamId,
+                member: new mongoose.Types.ObjectId(member)
+            })
+        )
+    );
 
-    return res
-        .status(200)
-        .json(new apiResponse(
-            200,
-            team,
-            "Team members removed"
-        ))
-})
+    return res.status(200).json(new apiResponse(
+        200,
+        { members },
+        "Team members removed"
+    ));
+});
+
 
 const getTeamData = asyncHandler(async (req, res) => {
     const { teamId } = req.params

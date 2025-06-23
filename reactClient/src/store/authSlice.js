@@ -23,9 +23,15 @@ const authSlice = createSlice({
         },
         dispatchAvatar:(state,action) => {
             state.userData = {...state.userData, avatar: action.payload}; 
-        }
+        },
+        dispatchOwnerTrue : (state,action) => {
+            state.userData = {...state.userData, owner: true}; 
+        },
+        dispatchOwnerFalse : (state,action) => {
+            state.userData = {...state.userData, owner: false}; 
+        },
     }
 })
 
-export const {dispatchLogin,dispatchLogout,dispatchAvatar} = authSlice.actions;
+export const {dispatchLogin,dispatchLogout,dispatchAvatar,dispatchOwnerTrue,dispatchOwnerFalse} = authSlice.actions;
 export default authSlice.reducer;

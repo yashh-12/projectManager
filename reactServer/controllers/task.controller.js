@@ -52,7 +52,7 @@ const createNewTask = asyncHandler(async (req, res) => {
 const removeATask = asyncHandler(async (req, res) => {
     const { taskId } = req.params
 
-    if (!isValidObjectId) {
+    if (!isValidObjectId(taskId)) {
         throw new apiError(400, "Invalid task ID")
     }
 
@@ -188,7 +188,7 @@ const getTaskData = asyncHandler(async (req, res) => {
         {
             $unwind: {
                 path: "$assigned_team",
-                preserveNullAndEmptyArrays: true // ✅ Ensures task is included even without a team
+                preserveNullAndEmptyArrays: true 
             }
         },
         {

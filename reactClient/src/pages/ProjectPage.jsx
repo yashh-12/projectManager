@@ -1,29 +1,36 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Outlet, useParams, NavLink, useNavigate } from 'react-router-dom';
 import { getUnreadChatCount } from '../services/chatService';
 import useSocket from '../provider/SocketProvider';
 import FlashMsg from '../components/FlashMsg';
 import PeerService from '../services/PeerService';
 import useStream from '../provider/StreamProvide';
+import { SiBukalapak } from 'react-icons/si';
+import { getProjectMetaData } from '../services/projectService';
+import { useDispatch, useSelector } from 'react-redux';
+import { dispatchOwnerTrue } from '../store/authSlice';
 
 function ProjectPage() {
-  
+  const dispatch = useDispatch()
   const [flashMsg, setFlashMsg] = useState('');
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [incomingCallData, setIncomingCallData] = useState('');
   const [remoteStream, setRemoteStream] = useState();
   const { stream, setStream } = useStream()
-  
+  const userData = useSelector(state => state.auth.userData)
   const [myStream, setMyStream] = useState();
-  
+  const collectedStream = useRef(null);
+
   const navigate = useNavigate();
   const { projectId } = useParams();
   const { client } = useSocket();
+  const remotee = useRef(null)
 
   const fetchUnreadNotificationCount = async () => {
     const count = await getUnreadChatCount(projectId);
     setUnreadChatCount(count?.data);
   };
+
 
   const getMediaPermission = async () => {
     try {
@@ -43,14 +50,26 @@ function ProjectPage() {
 
   const sendStreams = useCallback(async () => {
     if (!stream) {
-      console.log("Stream not available when trying to send tracks",myStream , " ",stream);
+      console.log("Stream not available when trying to send tracks", stream);
       return;
     }
-  
+    console.log("stream sent ");
     for (const track of stream.getTracks()) {
-      await PeerService.peer.addTrack(track, stream);
+      PeerService.peer.addTrack(track, stream);
     }
   }, [stream]);
+
+  const sendCollectedStreams = useCallback(async () => {
+    if (!collectedStream.current) {
+      console.log("Stream not available when trying to send tracks", collectedStream.current);
+      return;
+    }
+    console.log("stream sent ");
+
+    for (const track of collectedStream.current.getTracks()) {
+      PeerService.peer.addTrack(track, collectedStream.current);
+    }
+  }, []);
 
 
   const handleMessage = useCallback(() => {
@@ -68,48 +87,47 @@ function ProjectPage() {
 
 
   const handleStartHandshake = useCallback(async (roomId) => {
-    
+
     const offer = await PeerService.getOffer();
+    console.log("send offer ");
+
     client.emit("sendOffer", { offer, roomId });
-    
+
   }, [client]);
 
 
 
   const handleOffer = useCallback(async ({ roomId, offer }) => {
+    console.log("Offer came ", collectedStream.current, " ", stream);
 
     const answer = await PeerService.getAnswer(offer);
     client.emit("sendAnswer", { roomId, answer });
-    sendStreams();
+    sendCollectedStreams();
   }, [client]);
 
 
-
-  
-  
-  
   const handleAnswer = useCallback(
     async ({ roomId, answer }) => {
-      await PeerService.setLocalDescription(answer);
-      setStream(stream)
-      setMyStream(stream)
+
+      // console.log("Answer came ", stream);
+
+      await PeerService.setRemoteDescription(answer);
       sendStreams();
-      console.log("Call Accepted!");
+      // console.log("Call Accepted!");
+
     },
     [sendStreams]
   );
-  
-  
+
+
 
 
   useEffect(() => {
     PeerService.peer.addEventListener("track", async (ev) => {
-      const remoteStream = ev.streams;
-      setRemoteStream(remoteStream[0]);
-      console.log("remote stream ",remoteStream);
-      
+      const remoteStre = ev.streams;
+      setRemoteStream(remoteStre[0]);
     });
-  }, [stream,remoteStream]);    
+  }, [stream, sendStreams, sendCollectedStreams, collectedStream, remoteStream]);
 
 
 
@@ -142,12 +160,12 @@ function ProjectPage() {
   ]);
 
   const handleCall = async () => {
-    const collectStream = await getMediaPermission();    
-    setStream(collectStream)
-    setMyStream(collectStream)
-    console.log("collected stream ",collectStream);
-    
-    if (collectStream) {
+    collectedStream.current = await getMediaPermission();
+
+    console.log("collected stream ", collectedStream.current);
+    setStream(collectedStream.current)
+
+    if (collectedStream.current) {
       client.emit("join-personalRoom", incomingCallData.roomId);
       setIncomingCallData("");
     }
@@ -211,29 +229,43 @@ function ProjectPage() {
           ))}
         </div>
       </div>
-     {(stream && remoteStream) && (
+      {((stream || collectedStream.current) && remoteStream) && (
         <div className="relative w-full h-[500px] bg-black flex">
+
           {remoteStream ? (
-            <video
-              className="w-1/2 h-full object-cover"
-              ref={video => video && (video.srcObject = remoteStream)}
-              autoPlay
-              playsInline
-            />
+            <div className="relative w-1/2 h-full">
+              <video
+                className="w-full h-full object-cover"
+                ref={(video) => video && (video.srcObject = remoteStream)}
+                autoPlay
+                playsInline
+              />
+              <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white px-3 py-1 rounded">
+                Remote
+              </div>
+            </div>
           ) : (
             <div className="w-1/2 h-full bg-black" />
           )}
-          {stream && (
-            <video
-              className="w-1/2 h-full object-cover border-l-2 border-white"
-              ref={video => video && (video.srcObject = stream)}
-              muted
-              autoPlay
-              playsInline
-            />
+
+          {(stream || collectedStream.current) && (
+            <div className="relative w-1/2 h-full border-l-2 border-white">
+              <video
+                className="w-full h-full object-cover"
+                ref={(video) => video && (video.srcObject = stream ?? collectedStream.current)}
+                muted
+                autoPlay
+                playsInline
+              />
+              <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white px-3 py-1 rounded">
+                You
+              </div>
+            </div>
           )}
+
         </div>
       )}
+
 
       <main className="flex-1 w-full px-8 py-6 bg-gray-900">
         <Outlet />

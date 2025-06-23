@@ -12,6 +12,8 @@ import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { modifyDeadline } from '../services/taskService';
+import { useDispatch, useSelector } from 'react-redux';
+import { dispatchOwnerFalse, dispatchOwnerTrue } from '../store/authSlice';
 
 
 const locales = {
@@ -27,12 +29,25 @@ const localizer = dateFnsLocalizer({
 });
 
 function ProjectOverview() {
+  const dispatch = useDispatch()
   // const data = useLoaderData()?.data;
-  const { overviewData, allTasks } = useLoaderData();
+  const {projectId} = useParams();
+  const { overviewData, allTasks,projectData } = useLoaderData();
   const data = overviewData?.data
   const DragAndDropCalendar = withDragAndDrop(Calendar);
+  const userData = useSelector(state => state.auth.userData)
 
+  useEffect(() => {
+    
+    if(userData._id == projectData?.data?.owner){
+      console.log("this ran");
+      
+      dispatch(dispatchOwnerTrue())
+    }else{
+      dispatch(dispatchOwnerFalse())
+    }
 
+  },[dispatch,projectId])
   console.log("over ", allTasks);
 
 
@@ -74,7 +89,6 @@ function ProjectOverview() {
   };
 
 
-  const { projectId } = useParams();
   const navigate = useNavigate();
 
   const totalTasks = data?.totalTasks || 0;

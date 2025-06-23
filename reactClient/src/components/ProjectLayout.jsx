@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLoaderData, Outlet, useNavigate ,useNavigation,useLocation } from 'react-router-dom';
 import { useDispatch , useSelector } from 'react-redux';
 import { setLoaderFalse, setLoaderTrue } from '../store/uiSlice.js';
-import { createProject } from '../services/projectService.js';
+import { createProject, getProjectMetaData } from '../services/projectService.js';
 import Sidebar from './Sidebar.jsx';
+import { dispatchOwnerFalse, dispatchOwnerTrue } from '../store/authSlice.js';
 
 function ProjectLayout() {
 
@@ -16,6 +17,7 @@ function ProjectLayout() {
   const [authLoader, setAuthLoader] = useState(true);
   const navigating = navigation.state == "loading"
 
+  
   const isAuthPage = [
     '/login',
     '/Login',

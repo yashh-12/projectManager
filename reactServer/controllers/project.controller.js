@@ -236,6 +236,7 @@ const getProjectMetaData = asyncHandler(async (req, res) => {
     throw new apiError(404, "Project not found")
   }
 
+  return res.status(200).json(new apiResponse(200,project,"Project SuccessFully fetched"))
 
 })
 

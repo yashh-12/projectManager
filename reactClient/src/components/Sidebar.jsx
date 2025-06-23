@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useLoaderData, NavLink } from 'react-router-dom';
+import { Link, useLoaderData, NavLink, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { createProject, deleteProject } from '../services/projectService.js';
 import { FaTrash } from 'react-icons/fa';
+import { dispatchOwnerFalse, dispatchOwnerTrue } from '../store/authSlice.js';
 
 function Sidebar() {
     const [isCreating, setIsCreating] = useState(false);
@@ -17,12 +18,23 @@ function Sidebar() {
     const dispatch = useDispatch();
     const userData = useSelector(state => state.auth.userData);
 
+    const location = useLocation();
+
+    const currentPath = location.pathname;
+
+    const isProjectActive = (projectId) =>
+        currentPath === `/projects/${projectId}` ||
+        currentPath.startsWith(`/projects/${projectId}/`);
+
+
     const handleCreateProject = async () => {
         const res = await createProject(projectName, deadline);
         console.log(res);
-        
+
         if (res.success && res.data) {
             setProjects(prev => [...prev, res.data]);
+            console.log(res.data);
+
             setIsCreating(false);
             setProjectName('');
             setDeadline('');
@@ -34,9 +46,9 @@ function Sidebar() {
         try {
             const res = await deleteProject(selectedProjectId);
             console.log(res);
-            if(res.success){
-            setShowDeleteModal(false);
-            setProjects(projects.filter((p) => p._id!== selectedProjectId));
+            if (res.success) {
+                setShowDeleteModal(false);
+                setProjects(projects.filter((p) => p._id !== selectedProjectId));
             }
         } catch (error) {
             console.error("Failed to delete project:", error);
@@ -48,8 +60,8 @@ function Sidebar() {
             <div key={project._id} className="flex items-center justify-between group">
                 <NavLink
                     to={`/projects/${project._id}/overview`}
-                    className={({ isActive }) =>
-                        `flex items-center gap-2 flex-1 text-left px-4 py-2 rounded-lg transition ${isActive
+                    className={
+                        `flex items-center gap-2 flex-1 text-left px-4 py-2 rounded-lg transition ${isProjectActive(project._id)
                             ? 'bg-blue-600 text-white'
                             : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                         }`
@@ -57,6 +69,7 @@ function Sidebar() {
                 >
                     {project.name}
                 </NavLink>
+
 
                 {project.owner === userData?._id && (
                     <button

@@ -61,6 +61,7 @@ server.on("connection", (client) => {
     }
   });
 
+
   client.on('call-user', ({ user, targetUserId, callerId, roomId }) => {
     const targetSocketId = socketHashMap[targetUserId];
     if (targetSocketId) {
@@ -77,16 +78,77 @@ server.on("connection", (client) => {
     client.to(roomId).emit("answer", { roomId, answer })
   });
 
-  client.on("teamAssigned", ({ members, taskToFindMember }) => {
+  client.on("teamAssigned", ({ members, updatedTargetedTask }) => {
     members.forEach((memberId) => {
       const targetSocketId = socketHashMap[memberId];
       if (targetSocketId) {
         console.log("sent ", targetSocketId);
 
-        client.to(targetSocketId).emit("recTask", taskToFindMember);
+        client.to(targetSocketId).emit("recTask", updatedTargetedTask);
       }
     });
   });
+
+
+  client.on("removeTeam", ({ taskId, members }) => {
+    members.forEach((memberId) => {
+      const targetSocketId = socketHashMap[memberId];
+      if (targetSocketId) {
+        client.to(targetSocketId).emit("remTask", taskId);
+      }
+    });
+  })
+
+  client.on("deletedTask", ({ taskId, members }) => {
+    members.forEach((memberId) => {
+      const targetSocketId = socketHashMap[memberId];
+      if (targetSocketId) {
+        client.to(targetSocketId).emit("remTask", taskId);
+      }
+    });
+  })
+
+  client.on("modifyTask", ({ task, members }) => {
+    members.forEach((memberId) => {
+      const targetSocketId = socketHashMap[memberId];
+      if (targetSocketId) {
+        client.to(targetSocketId).emit("modify", task);
+      }
+    });
+  })
+
+  client.on("assignedMembers", ({ newTeam ,members}) => {
+    console.log("mems ",members);
+    
+    members?.forEach((memberId) => {
+      const targetSocketId = socketHashMap[memberId];
+      if (targetSocketId) {
+        console.log("mem id ",memberId);
+        
+        client.to(targetSocketId).emit("assignMember", newTeam);
+      }
+    });
+  })
+
+  client.on("removedFromTeam", ({ teamId,members }) => {
+    members?.forEach((memberId) => {
+      const targetSocketId = socketHashMap[memberId];
+      if (targetSocketId) {
+        client.to(targetSocketId).emit("removeFromTeam", teamId);
+      }
+    });
+  })
+
+    client.on("deletedTeam", ({ teamToDelete,members }) => {
+      console.log("req came ",members);
+      
+    members?.forEach((memberId) => {
+      const targetSocketId = socketHashMap[memberId];
+      if (targetSocketId) {
+        client.to(targetSocketId).emit("deleteTeam", teamToDelete);
+      }
+    });
+  })
 
   client.on("disconnect", () => {
     for (const userId in socketHashMap) {
