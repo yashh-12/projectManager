@@ -27,7 +27,7 @@ const registerUser = asyncHandler(async (req, res) => {
     if (existingUser.isVerified)
       return res
         .status(400)
-        .json(new apiError(400, "User already exists and is verified"));
+        .json(new apiError(400, "Email is already registered"));
 
 
     const otp = await sendVerificationEmail(existingUser?.email);

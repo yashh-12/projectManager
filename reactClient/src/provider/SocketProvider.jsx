@@ -1,13 +1,13 @@
-// src/provider/SocketProvider.jsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
 
 const SocketContext = createContext();
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
-  const userData = useSelector(state => state?.auth?.userData);
+  const userData = useSelector(state => state?.auth?.userData);  
 
   useEffect(() => {
     if (!userData?._id) return;
@@ -17,7 +17,7 @@ export const SocketProvider = ({ children }) => {
       transports: ['websocket'],
     });
 
-    newSocket.on("connect", () => {
+    newSocket.on("connect", () => {      
       console.log("Connected to socket server ",newSocket.id);
       newSocket.emit("register", userData._id);
     });

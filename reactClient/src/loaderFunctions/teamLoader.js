@@ -1,10 +1,12 @@
-import { getAllTasks, getAllTeams } from "../services/projectService.js"
+import { getAllTasks, getAllTeams ,getProjectMetaData} from "../services/projectService.js"
 
-const teamLoader = async(req) => {
+const teamLoader = async (req) => {
     const { projectId } = req.params;
 
-    const res = await getAllTeams(projectId);
-    return res;
+    const aTeams = await getAllTeams(projectId);
+    const projectData = await getProjectMetaData(projectId);
+
+    return {aTeams,projectData};
 }
 
 export default teamLoader;

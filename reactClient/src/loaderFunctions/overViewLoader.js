@@ -3,16 +3,10 @@ import { getAllTasks, getProjectMetaData, getProjectOverview } from "../services
 const overViewLoader = async (req) => {
     try {
         const {projectId} = req.params;
-        console.log("this ran");
         
         const overviewData = await getProjectOverview(projectId);
         const allTasks = await getAllTasks(projectId)
-                console.log("this ran ");
-
-        const projectData = await getProjectMetaData(projectId);
-        console.log("this ran ");
-        
-        return {overviewData,allTasks,projectData};
+        return {overviewData,allTasks};
     } catch (error) {
         console.log(error);
         

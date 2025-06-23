@@ -9,6 +9,7 @@ import { getAllUser } from '../services/authService.js';
 import { getUnassignedUsers } from '../services/teamService.js';
 import TeamList from './TeamList.jsx';
 import useSocket from '../provider/SocketProvider.jsx';
+import { dispatchOwnerFalse, dispatchOwnerTrue } from '../store/authSlice.js';
 
 function Team() {
 
@@ -17,8 +18,17 @@ function Team() {
   const [addTeamForm, setAddTeamForm] = useState(false);
   const [teamName, setTeamName] = useState('');
   const { projectId } = useParams();
-  const aTeams = useLoaderData();
+  const { aTeams, projectData } = useLoaderData();
   console.log(aTeams);
+
+  useEffect(() => {
+    if (userData._id == projectData?.data?.owner) {
+      dispatch(dispatchOwnerTrue())
+    } else {
+      dispatch(dispatchOwnerFalse())
+    }
+
+  }, [dispatch, projectId])
 
   const userData = useSelector(state => state?.auth?.userData)
   const isProjectOwner = userData?.owner;

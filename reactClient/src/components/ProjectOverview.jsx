@@ -32,24 +32,12 @@ function ProjectOverview() {
   const dispatch = useDispatch()
   // const data = useLoaderData()?.data;
   const {projectId} = useParams();
-  const { overviewData, allTasks,projectData } = useLoaderData();
+  const { overviewData, allTasks } = useLoaderData();
   const data = overviewData?.data
   const DragAndDropCalendar = withDragAndDrop(Calendar);
   const userData = useSelector(state => state.auth.userData)
 
-  useEffect(() => {
-    
-    if(userData._id == projectData?.data?.owner){
-      console.log("this ran");
-      
-      dispatch(dispatchOwnerTrue())
-    }else{
-      dispatch(dispatchOwnerFalse())
-    }
-
-  },[dispatch,projectId])
-  console.log("over ", allTasks);
-
+ 
 
 
   const initialEvents = allTasks?.data?.map((task) => {

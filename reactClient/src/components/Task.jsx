@@ -11,6 +11,7 @@ import useSocket from '../provider/SocketProvider.jsx';
 import { createNotification } from '../services/notificationService.js';
 import { getTeamMembers } from '../services/teamService.js';
 import { dispatchOwnerFalse, dispatchOwnerTrue } from '../store/authSlice.js';
+import { da } from 'date-fns/locale';
 
 function Task() {
 
@@ -27,7 +28,7 @@ function Task() {
 
     const [deadline, setDeadline] = useState(oneWeekFromNow);
     const [details, setDetails] = useState('');
-    const tasks = useLoaderData()
+    const {tasks,projectData} = useLoaderData()
     console.log("tasks", tasks);
 
     const [dropdownIndex, setDropdownIndex] = useState(null);
@@ -44,10 +45,42 @@ function Task() {
     const [notification, setNotification] = useState("")
 
     const userData = useSelector(state => state?.auth?.userData)
+    
+    useEffect(() => {    
+    if(userData._id == projectData?.data?.owner){      
+      dispatch(dispatchOwnerTrue())
+    }else{
+      dispatch(dispatchOwnerFalse())
+    }
+
+  },[dispatch,projectId])
+  console.log("over ", allTasks);
+
 
     const isProjectOwner = userData?.owner;
     console.log(isProjectOwner);
-    
+
+    useEffect(() => {
+
+        if (!client)
+            return;
+
+        client.on("recTask", (data) => {
+            setAllTasks(prev => [...prev, data])
+
+        })
+
+        client.on("remTask", (data) => {
+            setAllTasks(prev => prev.filter(ele => ele._id != data))
+        })
+
+        client.on("modify", (data) => {
+            console.log("this ",data," ", allTasks);
+            
+            setAllTasks(prev => prev.map(ele => ele._id == data._id ? { ...ele, task: data.task, details: data.details, deadline: data.deadline } : ele))
+        })
+
+    }, [client])
 
     useEffect(() => {
         if (assignForm) {
