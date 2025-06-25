@@ -10,6 +10,7 @@ import { getUnassignedUsers } from '../services/teamService.js';
 import TeamList from './TeamList.jsx';
 import useSocket from '../provider/SocketProvider.jsx';
 import { dispatchOwnerFalse, dispatchOwnerTrue } from '../store/authSlice.js';
+import { createNotification } from '../services/notificationService.js';
 
 function Team() {
 
@@ -98,7 +99,6 @@ function Team() {
   const handleDelete = async (teamId) => {
     console.log('Team Deleted:', teamId);
     const res = await deleteTeam(teamId);
-    // console.log(res);
 
     if (res.success) {
       console.log(allTeams);
@@ -120,7 +120,6 @@ function Team() {
     console.log('Assign Member to Team:', teamId);
     const res = await getUnassignedUsers(teamId);
     console.log(res);
-
     if (res?.success) {
       setAllUsers(res?.data ?? []);
       setOriginalUsers(res?.data ?? [])
@@ -143,7 +142,6 @@ function Team() {
 
       setAllTeams(prev => prev.map(ele => selectedTeam ? { ...ele, team_members: res?.data } : ele))
       client.emit("assignedMembers", { newTeam, members })
-
       setSelectedUsers([]);
       setAllUsers([])
       setOriginalUsers([])
@@ -161,7 +159,6 @@ function Team() {
       setSelectedTeam(teamId);
       setRemoveMemberForm(true);
     }
-
   };
 
   const showDetails = async (teamId) => {

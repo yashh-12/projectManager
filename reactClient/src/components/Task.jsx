@@ -190,10 +190,8 @@ function Task() {
                 task._id === formTaskId ? { ...task, team: { _id: selectedTeam._id, name: selectedTeam.name }, teamMemberIds: members, project: selectedTeam?.project } : task
             ));
 
+            
             setNotification("Task assigned successfully")
-
-
-            console.log("selected ", targetedTask);
 
             const updatedTargetedTask = {
                 ...targetedTask,
@@ -207,8 +205,9 @@ function Task() {
             };
             console.log(members);
 
-            // await createNotification(`Task ${targetedTask.name} is assigned to your team ${selectedTeam?.team?.name}`)
-
+            // const resp =  await createNotification(`Task ${targetedTask.name} is assigned to your team ${selectedTeam?.team?.name}`)
+            // console.log(resp);
+            
             client.emit("teamAssigned", { members, updatedTargetedTask })
             setFormTaskID(null)
             setSelectedTeam(null)

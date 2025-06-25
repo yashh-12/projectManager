@@ -1,8 +1,8 @@
 
 class apiError{
-    constructor(statusCode, message) {
+    constructor(status, message) {
         this.message = message;
-        this.statusCode = statusCode;
+        this.status = status;
         this.success = false;
     }
 }

@@ -236,7 +236,7 @@ const getProjectMetaData = asyncHandler(async (req, res) => {
     throw new apiError(404, "Project not found")
   }
 
-  return res.status(200).json(new apiResponse(200,project,"Project SuccessFully fetched"))
+  return res.status(200).json(new apiResponse(200, project, "Project SuccessFully fetched"))
 
 })
 
@@ -265,7 +265,7 @@ const getAllTeams = asyncHandler(async (req, res) => {
       }
     },
     { $unwind: "$project" },
-  
+
     // Join with teammemberships to get membership docs
     {
       $lookup: {
@@ -275,7 +275,7 @@ const getAllTeams = asyncHandler(async (req, res) => {
         as: "memberships"
       }
     },
-  
+
     // Join with users to populate team_members
     {
       $lookup: {
@@ -294,7 +294,7 @@ const getAllTeams = asyncHandler(async (req, res) => {
         as: "team_members"
       }
     },
-  
+
     // Join with tasks to get assigned tasks
     {
       $lookup: {
@@ -319,7 +319,7 @@ const getAllTeams = asyncHandler(async (req, res) => {
         as: "assigned_tasks"
       }
     },
-  
+
     // Filter: Only show teams where user is project owner or team member
     {
       $match: {
@@ -329,7 +329,7 @@ const getAllTeams = asyncHandler(async (req, res) => {
         ]
       }
     },
-  
+
     // Final result structure
     {
       $project: {
@@ -347,13 +347,12 @@ const getAllTeams = asyncHandler(async (req, res) => {
       }
     }
   ]);
-  
+
 
   return res
     .status(200)
     .json(new apiResponse(200, teams, "All project teams where user is owner or team member"));
 });
-
 
 const getAllTasks = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
@@ -772,8 +771,8 @@ const getProjectMembers = asyncHandler(async (req, res) => {
         username: { $first: "$username" },
         unreadCount: { $first: "$unreadCount" },
       },
-    },  {
-      $sort: { unreadCount: -1 }, 
+    }, {
+      $sort: { unreadCount: -1 },
     }
   ]);
 
@@ -782,8 +781,135 @@ const getProjectMembers = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, users, "Unique project users with unread counts"));
 });
 
+const getMetadatForDashBoard = asyncHandler(async (req, res) => {
+  const userId = new mongoose.Types.ObjectId(req.user._id);
 
+  const projects = await Project.aggregate([
+    {
+      $lookup: {
+        from: "tasks",
+        localField: "_id",
+        foreignField: "project",
+        as: "tasks"
+      }
+    },
+    {
+      $lookup: {
+        from: "teams",
+        localField: "_id",
+        foreignField: "project",
+        as: "teams"
+      }
+    },
+    {
+      $unwind: {
+        path: "$teams",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "teammemberships",
+        let: { teamId: "$teams._id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$teamID", "$$teamId"] },
+                  { $eq: ["$member", userId] }
+                ]
+              }
+            }
+          }
+        ],
+        as: "userMemberships"
+      }
+    },
+    {
+      $addFields: {
+        isUserOwner: { $eq: ["$owner", userId] },
+        isUserTeamMember: { $gt: [{ $size: "$userMemberships" }, 0] }
+      }
+    },
+    {
+      $match: {
+        $or: [
+          { isUserOwner: true },
+          { isUserTeamMember: true }
+        ]
+      }
+    },
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$name" },
+        tasks: { $first: "$tasks" },
+      }
+    },
+    {
+      $addFields: {
+        totalTasks: { $size: "$tasks" },
+        completedTasks: {
+          $size: {
+            $filter: {
+              input: "$tasks",
+              as: "task",
+              cond: { $eq: ["$$task.status", true] }
+            }
+          }
+        }
+      }
+    },
+    {
+      $addFields: {
+        completionPercentage: {
+          $cond: [
+            { $eq: ["$totalTasks", 0] },
+            0,
+            {
+              $round: [
+                {
+                  $multiply: [
+                    { $divide: ["$completedTasks", "$totalTasks"] },
+                    100
+                  ]
+                },
+                0
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        totalTasks: 1,
+        completedTasks: 1,
+        completionPercentage: 1
+      }
+    }
+  ]);
 
+  const totalProjects = projects.length;
+  const completedProjects = projects.filter(p => p.completionPercentage === 100).length;
+
+  return res.status(200).json(
+    new apiResponse(200, {
+      stats: {
+        totalProjects,
+        completedProjects
+      },
+      chartData: projects.map(p => ({
+        name: p.name,
+        completion: p.completionPercentage ?? 0
+      })),
+      rawProjects: projects
+    }, "Successfully fetched Dashboard Metadata")
+  );
+});
 
 export {
   createNewProject,
@@ -802,4 +928,5 @@ export {
   markProjectAsCompleted,
   markedProjectAsIncomplete,
   getProjectMembers,
+  getMetadatForDashBoard
 }

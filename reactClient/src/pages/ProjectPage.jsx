@@ -26,7 +26,7 @@ function ProjectPage() {
   const { client } = useSocket();
   const remotee = useRef(null)
 
-  const fetchUnreadNotificationCount = async () => {
+  const fetchUnreadChatCount = async () => {
     const count = await getUnreadChatCount(projectId);
     setUnreadChatCount(count?.data);
   };
@@ -172,7 +172,7 @@ function ProjectPage() {
   };
 
   useEffect(() => {
-    fetchUnreadNotificationCount();
+    fetchUnreadChatCount();
   }, []);
 
   return (

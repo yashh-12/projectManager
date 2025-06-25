@@ -22,11 +22,13 @@ import Task from './components/Task.jsx'
 import ProjectOverview from './components/ProjectOverview.jsx'
 import Team from './components/Team.jsx'
 import teamLoader from './loaderFunctions/teamLoader.js'
-import overViewLoader from './loaderFunctions/overViewLoader.js'
 import Chat from './components/Chat.jsx'
 import { SocketProvider } from './provider/SocketProvider.jsx'
 import { StreamProvider } from './provider/StreamProvide.jsx'
 import VideoCall from './pages/VideoCall.jsx'
+import overViewLoader from './loaderFunctions/overViewLoader.js'
+import metadataLoader from './loaderFunctions/metadataLoader.js'
+import ForgotPassword from './pages/ForgotPassword.jsx'
 
 
 
@@ -40,7 +42,7 @@ const router = createBrowserRouter(
       <Route path='/signup' element={<Signup />} />
       <Route path='/verify-email' element={<Verify />} />
       <Route path='/projects' loader={dashboardLoader} element={< ProjectLayout />}>
-        <Route index loader={dashboardLoader} element={<Overview />} />
+        <Route index loader={metadataLoader} element={<Overview />} />
         <Route path=':projectId/' loader={dashboardLoader} element={<ProjectPage />} >
           <Route path='overview' loader={overViewLoader} element={<ProjectOverview />} />
           <Route path='tasks' loader={taskLoader} element={<Task />} />
@@ -50,7 +52,9 @@ const router = createBrowserRouter(
         </Route>
 
       </Route>
-       <Route path='/profile' element={<ProfilePage />} />
+      <Route path='/profile' element={<ProfilePage />} />
+      <Route path='/forgot-password' element={<ForgotPassword />} />
+
     </Route>
   )
 )

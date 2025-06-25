@@ -1,45 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { setLoaderFalse, setLoaderTrue } from '../store/uiSlice';
 import { useDispatch } from 'react-redux';
-import { useNavigate ,NavLink} from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import { verifyEmail, resendOtp } from '../services/authService';
+import FlashMsg from "../components/FlashMsg"
 
 function Verify() {
   const [otp, setOtp] = useState('');
-  const [resendTimer, setResendTimer] = useState(120);
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    let timer;
-    if (resendTimer > 0) {
-      timer = setInterval(() => {
-        setResendTimer((prevTimer) => prevTimer - 1);
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [resendTimer]);
 
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
     dispatch(setLoaderTrue());
     const res = await verifyEmail(otp, localStorage.getItem('email'));
     if (res.success) {
-      dispatch(setLoaderFalse());
       navigate('/login');
-    } else {
-      dispatch(setLoaderFalse());
+    } else if(res?.status == 404) {
+      navigate("/signup")
     }
+    dispatch(setLoaderFalse());
   };
 
   const handleResendOtp = async () => {
     dispatch(setLoaderTrue());
-
     const res = await resendOtp(localStorage.getItem('email'));
-    if (res.success) {
-      setResendTimer(120);
+    if(res.status == 404){
+      navigate("/signup")
     }
-    
     dispatch(setLoaderFalse());
   };
 
@@ -77,8 +66,9 @@ function Verify() {
         <form
           onSubmit={handleOtpSubmit}
           className="relative bg-gray-800 p-10 rounded-xl shadow-lg w-full max-w-md space-y-6"
-        >
+          >
           <h2 className="text-3xl font-bold text-white text-center">OTP Verification</h2>
+          {message}
 
           <div className="flex flex-col">
             <label htmlFor="otp" className="text-gray-400 mb-2">Enter OTP</label>
@@ -104,10 +94,9 @@ function Verify() {
           <button
             type="button"
             onClick={handleResendOtp}
-            className={`w-full py-3 rounded-lg font-semibold transition duration-300 ${resendTimer > 0 ? 'bg-gray-500 text-gray-300 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}`}
-            disabled={resendTimer > 0}
+            className={`w-full py-3 rounded-lg font-semibold transition duration-300 bg-green-500 text-white hover:bg-green-600`}
           >
-            {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+            Resend Otp
           </button>
         </form>
       </div>

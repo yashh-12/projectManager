@@ -44,6 +44,7 @@ const register = async (name, username, email, password) => {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials:"include",
       body: JSON.stringify({
         name,
         username,
@@ -65,10 +66,11 @@ const verifyEmail = async (otp,emailId) => {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials:"include",
       body: JSON.stringify({
         otp,
       }),
-    })
+    })    
     return res.json()
   } catch (error) {
     console.log(error);
@@ -77,13 +79,36 @@ const verifyEmail = async (otp,emailId) => {
 
 }
 
-const resendOtp = async (emailId) => {
+const verifyOtpPassword = async (otp,emailId,newPassword,confirmPassword) => {
+  try {
+    const res = await fetch(`http://localhost:8080/api/auth/verifyotppwd/${emailId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials:"include",
+      body: JSON.stringify({
+        otp,
+        newPassword,
+        confirmPassword
+      }),
+    })    
+    return res.json()
+  } catch (error) {
+    console.log(error);
+
+  }
+
+}
+
+const resendOtp = async () => {
  try {
    const res = await fetch(`http://localhost:8080/api/auth/sendotp`, {
      method: "POST",
      headers: {
        "Content-Type": "application/json",
      },
+     credentials:"include"
    })
    return res.json()
  } catch (error) {
@@ -91,6 +116,24 @@ const resendOtp = async (emailId) => {
 
  }
 
+}
+
+const sendOtpForfgtPwd = async (emailId) => {
+ try {
+   const res = await fetch(`http://localhost:8080/api/auth/sendOtpFgPwd`, {
+     method: "POST",
+     headers: {
+       "Content-Type": "application/json",
+     },
+     credentials:"include",
+     body:JSON.stringify({
+      emailId
+     })
+   })
+   return res.json()
+ } catch (error) {
+  console.log(error?.message);
+ }
 }
 
 const getUserDetails = async () => {
@@ -106,7 +149,6 @@ const getUserDetails = async () => {
  
    return res.json()
  } catch (error) {
-  // console.log(error);
   return error
  }
 } 
@@ -177,11 +219,11 @@ const changeUserDetails = async (name,username,email) => {
 const uploadAvatar = async (avatar) => {
   try {
     const formData = new FormData();
-    formData.append("avatar", avatar); // 👈 MUST match multer.single("avatar")
+    formData.append("avatar", avatar);
 
     const res = await fetch("http://localhost:8080/api/auth/uploadAvatar", {
       method: "POST",
-      credentials: "include", // ✅ sends cookies for session auth
+      credentials: "include",
       body: formData,
     });
 
@@ -204,5 +246,7 @@ export {
   getAllUser,
   changePassword,
   changeUserDetails,
-  uploadAvatar
+  uploadAvatar,
+  sendOtpForfgtPwd,
+  verifyOtpPassword
 }

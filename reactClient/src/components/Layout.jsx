@@ -52,6 +52,7 @@ function Layout() {
     '/',
     '/about',
     '/contact',
+    '/forgot-password'
   ].includes(location.pathname);
 
   if (!user &&!isAuthPage) {

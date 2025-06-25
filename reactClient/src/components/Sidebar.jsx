@@ -18,6 +18,9 @@ function Sidebar() {
     const dispatch = useDispatch();
     const userData = useSelector(state => state.auth.userData);
 
+    console.log("data ",useLoaderData().data);
+    
+
     const location = useLocation();
 
     const currentPath = location.pathname;
@@ -34,7 +37,6 @@ function Sidebar() {
         if (res.success && res.data) {
             setProjects(prev => [...prev, res.data]);
             console.log(res.data);
-
             setIsCreating(false);
             setProjectName('');
             setDeadline('');
@@ -66,6 +68,10 @@ function Sidebar() {
                             : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                         }`
                     }
+
+                    onClick={() => {
+                        localStorage.setItem("pname",project.name)
+                    }}
                 >
                     {project.name}
                 </NavLink>

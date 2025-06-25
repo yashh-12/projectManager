@@ -8,7 +8,8 @@ const SocketContext = createContext();
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const userData = useSelector(state => state?.auth?.userData);  
-
+  const projectName = localStorage.getItem("pname")
+  
   useEffect(() => {
     if (!userData?._id) return;
 

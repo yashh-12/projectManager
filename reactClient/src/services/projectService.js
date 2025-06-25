@@ -126,6 +126,23 @@ const getProjectMetaData = async (projectId) => {
 
 }
 
+const getMetadataForDashBoard = async () => {
+  try {
+    const res = await fetch(`http://localhost:8080/api/projects/getMetaDataForDashBoard`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
+    return res.json()
+  } catch (error) {
+    console.log(error);
+
+  }
+
+}
+
 const getAllTeams = async (projectId) => {
   try {
     const res = await fetch(`http://localhost:8080/api/projects/${projectId}/getAllTeams`, {
@@ -290,5 +307,6 @@ export {
   getProjectOverview,
   markProjectAsDone,
   markProjectAsNotDone,
-  getProjectMembers
+  getProjectMembers,
+  getMetadataForDashBoard
 }

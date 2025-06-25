@@ -19,49 +19,62 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const existingUser = await User.findOne({
-    $or: [{ email: email }, { username: username }],
-  }).select("--refreshToken --password");
-
+    $or: [{ email }, { username }],
+  });
 
   if (existingUser) {
-    if (existingUser.isVerified)
+    if (existingUser.isVerified) {
       return res
         .status(400)
-        .json(new apiError(400, "Email is already registered"));
+        .json(new apiError(400, "Email or username already registered"));
+    }
+    const otp = await sendVerificationEmail(email);
+    const hashedOtp = await bcrypt.hash(otp.toString(), 12);
 
 
-    const otp = await sendVerificationEmail(existingUser?.email);
-    const newOpt = otp.toString();
-    const hashedOtp = await bcrypt.hash(newOpt, 12)
-    existingUser.otp = hashedOtp;
-    existingUser.password = password;
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     existingUser.name = name;
     existingUser.username = username;
-    existingUser.email = email;
-    existingUser.save();
+    existingUser.password = hashedPassword;
+    await existingUser.save();
 
+    const verifyToken = jwt.sign({
+      email, hashedOtp
+    }, process.env.OTP_SECRET, { expiresIn: "5m" }
+    )
+
+    const optionsForOtp = {
+      maxAge: 1000 * 60 * 5,
+      httpOnly: true,
+      secure: false,
+    };
     return res
       .status(200)
-      .json(
-        new apiResponse(
-          200,
-          existingUser,
-          "User already exists. Verify your email"
-        )
-      );
+      .cookie("verify", verifyToken, optionsForOtp)
+      .json(new apiResponse(
+        200,
+        existingUser,
+        "User already exists. Please verify your email"
+      ));
   }
 
   const otp = await sendVerificationEmail(email);
-  const newOpt = otp.toString();
-  const hashedOtp = await bcrypt.hash(newOpt, 12)
+
+  console.log("opt ", otp);
+
+  const hashedOtp = await bcrypt.hash(otp.toString(), 12);
+
   const newUser = await User.create({
     name,
     email,
-    password,
     username,
-    otp: hashedOtp
+    password: password,
   });
 
+  const verifyToken = jwt.sign({
+    email, hashedOtp
+  }, process.env.OTP_SECRET)
 
   if (!newUser) {
     return res
@@ -69,16 +82,20 @@ const registerUser = asyncHandler(async (req, res) => {
       .json(new apiError(400, "User registration failed"));
   }
 
+  const optionsForOtp = {
+    maxAge: 1000 * 60 * 5,
+    httpOnly: true,
+    secure: false,
+  };
+
   return res
     .status(200)
-    .json(
-      new apiResponse(
-        200,
-        newUser,
-        "User registered successfully. Verify your email"
-      )
-    );
-
+    .cookie("verify", verifyToken, optionsForOtp)
+    .json(new apiResponse(
+      200,
+      newUser,
+      "User registered successfully. Verify your email"
+    ));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -158,33 +175,34 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 const verifyUser = asyncHandler(async (req, res) => {
+
   const { otp } = req.body;
-  const { emailId } = req.params;
+  const verifyToken = req.cookies?.verify;
+
+  if (!verifyToken)
+    return res.status(400).json(new apiError(404, "Please register first"));
+
+  const dataToverify = jwt.decode(
+    verifyToken,
+    process.env.OTP_SECRET
+  )
 
   if (!otp)
     return res.status(400).json(new apiError(400, "Please enter otp"));
 
-  const user = await User.findOne({ email: emailId }).select("-password -refreshToken");
+  const user = await User.findOne({ email: dataToverify.email }).select("-password -refreshToken");
 
   if (!user)
-    return res.status(400).json(new apiError(400, "User not found"));
+    return res.status(400).json(new apiError(404, "User not found"));
 
-  const otpAge = req.cookies.maxAge
-  if (otpAge + 180000 < Date.now()) {
-    user.otp = null;
-    await user.save()
-    return res
-      .status(400)
-      .json(new apiError(400, "OTP expired. Please click Resend"));
-  }
+  const hashedOtp = dataToverify.hashedOtp;
 
-  const verify = await bcrypt.compare(otp, user?.otp)
+  const verify = await bcrypt.compare(otp.toString(), hashedOtp.toString())
 
   if (!verify)
     return res.status(400).json(new apiError(400, "Invalid otp"));
 
   user.isVerified = true;
-  user.otp = null;
   await user.save();
 
   return res
@@ -322,7 +340,7 @@ const changeUserDetails = asyncHandler(async (req, res) => {
     throw new apiError(400, "All fields are required");
 
   const usernameTaken = await User.findOne({ username: username });
-  
+
   if (usernameTaken) {
     return res.status(400).json(new apiError(400, "Username is already registered"));
   }
@@ -330,7 +348,7 @@ const changeUserDetails = asyncHandler(async (req, res) => {
   const emailTaken = await User.findOne({ email: email });
 
   if (emailTaken) {
-    return res.status(400).json(new apiError(400,  "Email is already registered"));
+    return res.status(400).json(new apiError(400, "Email is already registered"));
     // throw new apiError(400, "Email is already registered");
   }
 
@@ -352,23 +370,45 @@ const changeUserDetails = asyncHandler(async (req, res) => {
 });
 
 const sendMail = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-  if (!email)
-    return res.status(404).json(new apiError(400, "Email not found"))
 
-  const user = await User.findOne({ email: email });
+  const verifyToken = req.cookies.verify;
+
+  if (!verifyToken)
+    return res.status(404).json(new apiError(404, "Please Signup again"))
+
+  const dataToverify = jwt.decode(verifyToken, process.env.OTP_SECRET)
+
+  if (!dataToverify.email)
+    return res.status(404).json(new apiError(404, "Email not found"))
+
+
+  const user = await User.findOne({ email: dataToverify.email });
+
+
   if (!user)
     return res.status(404).json(new apiError(404, "User not found"));
 
 
-  const otp = await sendVerificationEmail(email)
+  const otp = await sendVerificationEmail(dataToverify.email)
+  // console.log("otp ", otp);
 
   const hashedOtp = await bcrypt.hash(otp.toString(), 12);
-  const maxAge = Date.now();
-  user.otp = hashedOtp;
 
-  await user.save()
-  res.status(200).cookie("maxAge", maxAge).json(new apiResponse(200, "Otp sent successfully"))
+  const optionsForOtp = {
+    maxAge: 1000 * 60 * 5,
+    httpOnly: true,
+    secure: false,
+  };
+
+  const newToken = jwt.sign({
+    hashedOtp, email: dataToverify.email
+  }, process.env.OTP_SECRET, { expiresIn: "5m" }
+  )
+
+  // console.log("req sent");/
+
+
+  res.status(200).cookie("verify", newToken, optionsForOtp).json(new apiResponse(200, {}, "Otp sent successfully"))
 })
 
 const getAllUsers = asyncHandler(async (req, res) => {
@@ -377,25 +417,116 @@ const getAllUsers = asyncHandler(async (req, res) => {
   res.status(200).json(new apiResponse(200, users, "All users fetched successfully"))
 })
 
-const uploadAvatar = asyncHandler(async (req,res) => {
+const uploadAvatar = asyncHandler(async (req, res) => {
   const avatar = req?.file;
-  
+
   const avatarCloudinary = await uploadonCloudinary(avatar?.path);
 
   const avatarUrl = avatarCloudinary?.url;
 
-  if(avatarUrl){
+  if (avatarUrl) {
 
     const user = await User.findById(req.user.id);
     user.avatar = avatarUrl;
-  
+
     await user.save();
-    return res.status(200).json(new apiResponse(200,avatarUrl,"Suceesfully uploaded"))
+    return res.status(200).json(new apiResponse(200, avatarUrl, "Suceesfully uploaded"))
   }
-  
-    return res.status(200).json(new apiResponse(400,"","Something went wrong"))
+
+  return res.status(200).json(new apiResponse(400, "", "Something went wrong"))
 
 })
+
+const sendForgotPasswordOtp = asyncHandler(async (req, res) => {
+  const { emailId } = req.body;
+
+  if (!emailId)
+    return res.status(400).json(new apiError(400, "Email is required"));
+
+  const user = await User.findOne({ email: emailId });
+
+  if (!user)
+    return res.status(404).json(new apiError(404, "User not found"));
+
+  const otp = await sendVerificationEmail(emailId);
+  const hashedOtp = await bcrypt.hash(otp.toString(), 12);
+
+  const optionsForOtp = {
+    maxAge: 1000 * 60 * 5,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+  };
+
+  const newToken = jwt.sign(
+    {
+      hashedOtp,
+      emailId,
+    },
+    process.env.OTP_SECRET,
+    { expiresIn: "5m" }
+  );
+
+  res
+    .status(200)
+    .cookie("forgotPwdVerify", newToken, optionsForOtp)
+    .json(new apiResponse(200, {}, "OTP sent successfully for password reset"));
+});
+
+const resetForgotPassword = asyncHandler(async (req, res) => {
+  const { otp, newPassword, confirmPassword } = req.body;
+
+  const token = req.cookies.forgotPwdVerify;
+
+  if (!token) {
+    return res
+      .status(401)
+      .json(new apiError(401, "Reset session expired. Please verify OTP again."));
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.decode(token, process.env.OTP_SECRET);
+  } catch (err) {
+    return res
+      .status(401)
+      .json(new apiError(401, "Invalid or expired reset token."));
+  }
+
+  const { emailId, hashedOtp } = decoded;
+
+  if (!emailId || !otp || !newPassword || !confirmPassword) {
+    return res
+      .status(400)
+      .json(new apiError(400, "All fields are required."));
+  }
+
+  const isMatch = await bcrypt.compare(otp.toString(), hashedOtp.toString());
+
+  if (!isMatch) {
+    return res.status(400).json(new apiError(400, "Incorrect OTP."));
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res
+      .status(400)
+      .json(new apiError(400, "Passwords do not match."));
+  }
+
+  const user = await User.findOne({ email: emailId });
+  if (!user) {
+    return res.status(404).json(new apiError(404, "User not found."));
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res
+    .clearCookie("forgotPwdVerify")
+    .status(200)
+    .json(new apiResponse(200, {}, "Password has been reset successfully. You can now login."));
+});
+
+
 
 
 export {
@@ -410,5 +541,7 @@ export {
   deleteAccount,
   sendMail,
   getAllUsers,
-  uploadAvatar
+  uploadAvatar,
+  sendForgotPasswordOtp,
+  resetForgotPassword
 };

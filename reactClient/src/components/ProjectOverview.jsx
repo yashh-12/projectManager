@@ -37,6 +37,7 @@ function ProjectOverview() {
   const DragAndDropCalendar = withDragAndDrop(Calendar);
   const userData = useSelector(state => state.auth.userData)
 
+ console.log("data ",data);
  
 
 
@@ -86,10 +87,12 @@ function ProjectOverview() {
 
   useEffect(() => {
     const toggleProjectStatus = async () => {
-      if (completedTasks / totalTasks * 100 == 100) {
+      if (completedTasks == totalTasks) {
         await markProjectAsDone(projectId)
       }
       else {
+        console.log("this rannnnn");
+        
         await markProjectAsNotDone(projectId)
       }
     }

@@ -6,10 +6,12 @@ import asyncHandler from "../utils/asyncHandler.js";
 
 const createNotification = asyncHandler(async (req, res) => {
   const userId = req?.user?._id;
+  console.log("ran ");
   if (!userId) {
     throw new apiError(400, "not authorized")
   }
 
+  
   const { message } = req.body
 
   if (!message)
