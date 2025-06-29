@@ -20,7 +20,7 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on("connect", () => {      
       console.log("Connected to socket server ",newSocket.id);
-      newSocket.emit("register", userData._id);
+      // newSocket.emit("register", userData._id);
     });
 
     newSocket.on("disconnect", () => {

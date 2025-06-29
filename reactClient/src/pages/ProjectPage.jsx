@@ -9,11 +9,13 @@ import { SiBukalapak } from 'react-icons/si';
 import { getProjectMetaData } from '../services/projectService';
 import { useDispatch, useSelector } from 'react-redux';
 import { dispatchOwnerTrue } from '../store/authSlice';
+import {  getUnreadNotificationCount } from '../services/notificationService';
 
 function ProjectPage() {
   const dispatch = useDispatch()
   const [flashMsg, setFlashMsg] = useState('');
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [incomingCallData, setIncomingCallData] = useState('');
   const [remoteStream, setRemoteStream] = useState();
   const { stream, setStream } = useStream()
@@ -30,6 +32,13 @@ function ProjectPage() {
     const count = await getUnreadChatCount(projectId);
     setUnreadChatCount(count?.data);
   };
+
+  // const fetchUnreadNotificationCount = async () => {
+  //   const count = await getUnreadNotificationCount();
+  //   console.log("count ", count);
+
+  //   setUnreadNotificationCount(count?.data);
+  // };
 
 
   const getMediaPermission = async () => {

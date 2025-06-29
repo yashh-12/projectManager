@@ -28,7 +28,7 @@ function Task() {
 
     const [deadline, setDeadline] = useState(oneWeekFromNow);
     const [details, setDetails] = useState('');
-    const {tasks,projectData} = useLoaderData()
+    const { tasks, projectData } = useLoaderData()
     console.log("tasks", tasks);
 
     const [dropdownIndex, setDropdownIndex] = useState(null);
@@ -45,16 +45,16 @@ function Task() {
     const [notification, setNotification] = useState("")
 
     const userData = useSelector(state => state?.auth?.userData)
-    
-    useEffect(() => {    
-    if(userData._id == projectData?.data?.owner){      
-      dispatch(dispatchOwnerTrue())
-    }else{
-      dispatch(dispatchOwnerFalse())
-    }
 
-  },[dispatch,projectId])
-  console.log("over ", allTasks);
+    useEffect(() => {
+        if (userData._id == projectData?.data?.owner) {
+            dispatch(dispatchOwnerTrue())
+        } else {
+            dispatch(dispatchOwnerFalse())
+        }
+
+    }, [dispatch, projectId])
+    console.log("over ", allTasks);
 
 
     const isProjectOwner = userData?.owner;
@@ -64,6 +64,8 @@ function Task() {
 
         if (!client)
             return;
+
+        client.emit("register", userData._id);
 
         client.on("recTask", (data) => {
             setAllTasks(prev => [...prev, data])
@@ -75,8 +77,8 @@ function Task() {
         })
 
         client.on("modify", (data) => {
-            console.log("this ",data," ", allTasks);
-            
+            console.log("this ", data, " ", allTasks);
+
             setAllTasks(prev => prev.map(ele => ele._id == data._id ? { ...ele, task: data.task, details: data.details, deadline: data.deadline } : ele))
         })
 
@@ -154,6 +156,7 @@ function Task() {
             console.log('Task deleted successfully:', res.data);
             setDropdownIndex(null)
             const taskTodelete = allTasks.find(task => task._id == taskId)
+            await createNotification(taskTodelete.teamMemberIds, `Task "${taskTodelete?.task}" is deleted which was assigned to your team`)
             client.emit("deletedTask", { taskId, members: taskTodelete.teamMemberIds || [] })
             setNotification("Task deleted successfully")
             setAllTasks(allTasks.filter(task => task._id !== taskId))
@@ -190,7 +193,7 @@ function Task() {
                 task._id === formTaskId ? { ...task, team: { _id: selectedTeam._id, name: selectedTeam.name }, teamMemberIds: members, project: selectedTeam?.project } : task
             ));
 
-            
+
             setNotification("Task assigned successfully")
 
             const updatedTargetedTask = {
@@ -203,11 +206,11 @@ function Task() {
                 project: selectedTeam.project,
                 teamMemberIds: members
             };
-            console.log(members);
 
-            // const resp =  await createNotification(`Task ${targetedTask.name} is assigned to your team ${selectedTeam?.team?.name}`)
-            // console.log(resp);
-            
+            console.log("ajs ", updatedTargetedTask);
+
+            const resp = await createNotification(members, `Task "${updatedTargetedTask?.task}" is assigned to your team "${updatedTargetedTask?.team?.name}"`)
+
             client.emit("teamAssigned", { members, updatedTargetedTask })
             setFormTaskID(null)
             setSelectedTeam(null)
@@ -228,6 +231,9 @@ function Task() {
             const taskTobeRemoved = allTasks.find(task => task._id == taskId);
             setAllTasks(allTasks.map(task => task._id === taskId ? { ...task, team: null } : task))
             const members = taskTobeRemoved.teamMemberIds || [];
+            // console.log(taskTobeRemoved);
+
+            await createNotification(members, `Your team "${taskTobeRemoved?.team?.name}" is removed from the task "${taskTobeRemoved?.task}" `)
             client.emit("removeTeam", { taskId, members })
             setNotification("Team removed successfully")
             setTimeout(() => {

@@ -1,4 +1,4 @@
-const createNotification = async (message) => {
+const createNotification = async (userIds,message) => {
     try {
         const res = await fetch(`http://localhost:8080/api/notifications/createNotification`, {
             method: "POST",
@@ -7,7 +7,8 @@ const createNotification = async (message) => {
             },
             credentials: "include",
             body: JSON.stringify({
-                message
+                message,
+                userIds
             })
         })
 
@@ -36,16 +37,16 @@ const clearAllNotification = async () => {
     }
 }
 
-const notificationMarkAsRead = async () => {
+const notificationMarkAsRead = async (notifications) => {
     try {
         const res = await fetch(`http://localhost:8080/api/notifications/markasread`, {
-            method: "GET",
+            method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             credentials: "include",
             body: JSON.stringify({
-                notificationIds
+                notifications
             })
         })
 
@@ -91,6 +92,23 @@ const getAllUnreadNotification = async () => {
     }
 }
 
+const getAllreadNotification = async () => {
+    try {
+        const res = await fetch(`http://localhost:8080/api/notifications/getreadNotification`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+        })
+
+        return res.json()
+    } catch (error) {
+        console.log(error);
+
+    }
+}
+
 const getUnreadNotificationCount = async () => {
     try {
         const res = await fetch(`http://localhost:8080/api/notifications/getUnreadNotificationCount`, {
@@ -109,5 +127,5 @@ const getUnreadNotificationCount = async () => {
 }
 
 export {
-    createNotification,clearAllNotification,getAllUnreadNotification,getUnreadNotificationCount,deleteNotification,notificationMarkAsRead
+    createNotification,clearAllNotification,getAllUnreadNotification,getUnreadNotificationCount,deleteNotification,notificationMarkAsRead,getAllreadNotification
 }

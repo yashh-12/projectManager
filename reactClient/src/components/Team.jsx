@@ -10,7 +10,7 @@ import { getUnassignedUsers } from '../services/teamService.js';
 import TeamList from './TeamList.jsx';
 import useSocket from '../provider/SocketProvider.jsx';
 import { dispatchOwnerFalse, dispatchOwnerTrue } from '../store/authSlice.js';
-import { createNotification } from '../services/notificationService.js';
+import { createNotification, notificationMarkAsRead } from '../services/notificationService.js';
 
 function Team() {
 
@@ -58,6 +58,9 @@ function Team() {
 
     if (!client)
       return;
+
+    client.emit("register", userData._id);
+
 
     client.on("assignMember", (data) => {
       setAllTeams(prev => [...prev, data])
@@ -108,7 +111,7 @@ function Team() {
       console.log(teamToDelete);
       const members = teamToDelete.team_members.map(ele => ele._id) || []
       console.log(members);
-
+      await createNotification(members, `Your team "${teamToDelete?.name}" has been disbanded`);
       client.emit("deletedTeam", { teamToDelete, members })
       setAllTeams(allTeams.filter(team => team._id !== teamId));
       setDropdownIndex(null)
@@ -141,6 +144,7 @@ function Team() {
       const members = res?.data?.map(ele => ele._id)
 
       setAllTeams(prev => prev.map(ele => selectedTeam ? { ...ele, team_members: res?.data } : ele))
+      await createNotification(members, `You have been assigned to team "${teamToAdd.name}"`)
       client.emit("assignedMembers", { newTeam, members })
       setSelectedUsers([]);
       setAllUsers([])
@@ -174,6 +178,9 @@ function Team() {
     const res = await removeMemberToTeam(selectedTeam, selectedUsers);
     if (res?.success) {
       console.log('Member removed successfully:', res?.data);
+      // console.log(selectedTeam);
+      const team = allTeams.find(t => t._id == selectedTeam)
+      await createNotification(res?.data?.members, `You have been removed from Team "${team.name}"`)
       client.emit("removedFromTeam", { teamId: selectedTeam, members: res?.data?.members })
       setRemoveMemberForm(false);
       setSelectedUsers([])

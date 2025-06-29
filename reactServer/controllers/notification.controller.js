@@ -5,59 +5,67 @@ import apiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const createNotification = asyncHandler(async (req, res) => {
-  const userId = req?.user?._id;
-  console.log("ran ");
-  if (!userId) {
-    throw new apiError(400, "not authorized")
+  const { userIds, message } = req.body;
+
+  if (!Array.isArray(userIds) || userIds.length === 0) {
+    throw new apiError(400, "userIds must be a non-empty array");
   }
 
-  
-  const { message } = req.body
-
-  if (!message)
-    throw new apiError(400, "Message is required")
-
-  const notification = await Notification.create({
-    userId,
-    message
-  })
-
-  if (!notification)
-    throw new apiError(400, "Failed to create Notification")
-
-  return res.status(200).json(new apiResponse(200, notification, "Notification created Successfully"))
-
-
-})
-
-const notificationMarkAsRead = asyncHandler(async (req, res) => {
-  const { notificationIds } = req.body;
-
-  if (!Array.isArray(notificationIds) || notificationIds.length === 0) {
-    throw new apiError(400, "Notification IDs are required");
+  if (!message) {
+    throw new apiError(400, "Message is required");
   }
 
   const notifications = await Promise.all(
-    notificationIds.map(id => Notification.findById(id))
+    userIds.map(userId =>
+      Notification.create({ userId, message })
+    )
   );
 
-  const validNotifications = notifications.filter(n => n);
-
-  if (validNotifications.length === 0) {
-    throw new apiError(404, "No valid notifications found");
+  if (!notifications || notifications.length === 0) {
+    throw new apiError(400, "Failed to create notifications");
   }
 
-  const updated = await Promise.all(
-    validNotifications.map(n => {
-      n.status = "read";
-      return n.save();
-    })
+  return res
+    .status(200)
+    .json(new apiResponse(200, notifications, "Notifications created successfully"));
+});
+
+
+const notificationMarkAsRead = asyncHandler(async (req, res) => {
+  const { notifications } = req.body;
+
+  if (!Array.isArray(notifications) || notifications.length === 0) {
+    throw new apiError(400, "Notification IDs are required");
+  }
+
+  const updated = await Notification.updateMany(
+    { _id: { $in: notifications } },
+    { $set: { status: "read" } }
   );
 
   return res.status(200).json(
     new apiResponse(200, updated, "Notifications marked as read")
   );
 });
+
+const getAllReadNotification = asyncHandler(async (req, res) => {
+  const userId = req?.user?._id
+
+  if (!userId)
+    throw new apiError(400, "not authorized")
+
+  const notifications = await Notification.find({
+    $and: [{ userId: userId }, { status: "read" }]
+  })
+
+  if (!notifications)
+    throw new apiError(400, "Not able to fetch Notification")
+
+
+  return res.status(200).json(new apiResponse(200, notifications, "Notification fetched successfully"))
+
+})
+
 
 const getAllUnreadNotification = asyncHandler(async (req, res) => {
   const userId = req?.user?._id
@@ -101,7 +109,7 @@ const getUnreadNotificationCount = asyncHandler(async (req, res) => {
 
   const unreadNotificationCount = await Notification.countDocuments({
     userId: userId,
-    status: "read"
+    status: "unread"
   })
 
   return res.status(200).json(new apiResponse(200, unreadNotificationCount, "unread Notification count"))
@@ -134,5 +142,6 @@ export {
   getUnreadNotificationCount,
   deleteNotification,
   clearAllNotification,
-  notificationMarkAsRead
+  notificationMarkAsRead,
+  getAllReadNotification
 }
