@@ -3,12 +3,14 @@ import useSocket from '../provider/SocketProvider';
 import { getProjectMembers } from '../services/projectService';
 import { useParams } from 'react-router-dom';
 import ChatArea from './ChatArea';
+import { useSelector } from 'react-redux';
 
 function Chat() {
   const { projectId } = useParams();
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const { client } = useSocket()
+  const userData = useSelector(state => state.auth.userData)
   useEffect(() => {
     const fetchUsers = async () => {
       const res = await getProjectMembers(projectId);
@@ -26,6 +28,8 @@ function Chat() {
   useEffect(() => {
 
     if (!client) return;
+    client.emit("register", userData._id);
+
 
 
     const handler = (data) => {

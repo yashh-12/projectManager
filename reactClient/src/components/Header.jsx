@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from "../services/authService.js";
 import { dispatchLogout } from '../store/authSlice.js';
@@ -14,6 +14,7 @@ import useSocket from '../provider/SocketProvider.jsx';
 
 
 function Header() {
+  const {projectId} = useParams();
   const navigate = useNavigate();
   const userData = useSelector((state) => state.auth.userData);
   const dispatch = useDispatch();
@@ -27,13 +28,13 @@ function Header() {
 
 
   useEffect(() => {
-    if (!client) return;
+    if (!client || !projectId) return;
 
     const increaseNotificationCount = (data) => {
       setNotificationCount(prev => prev + 1)
     }
 
-    client.emit("register", userData._id);
+    client.emit("register", { userId: userData._id ,projectId});
 
 
     client.on("recTask", increaseNotificationCount)

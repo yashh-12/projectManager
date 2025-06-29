@@ -169,14 +169,14 @@ function ProjectPage() {
   ]);
 
   const handleCall = async () => {
-    collectedStream.current = await getMediaPermission();
+    const media = await getMediaPermission();
+    collectedStream.current = media;
+    setStream(media)
 
-    console.log("collected stream ", collectedStream.current);
-    setStream(collectedStream.current)
-
-    if (collectedStream.current) {
+    if (media) {
       client.emit("join-personalRoom", incomingCallData.roomId);
       setIncomingCallData("");
+      // navigate("/videocall")
     }
   };
 

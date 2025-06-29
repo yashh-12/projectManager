@@ -59,7 +59,7 @@ function Team() {
     if (!client)
       return;
 
-    client.emit("register", userData._id);
+    client.emit("register", { userId:  userData._id, projectId});
 
 
     client.on("assignMember", (data) => {
@@ -112,7 +112,7 @@ function Team() {
       const members = teamToDelete.team_members.map(ele => ele._id) || []
       console.log(members);
       await createNotification(members, `Your team "${teamToDelete?.name}" has been disbanded`);
-      client.emit("deletedTeam", { teamToDelete, members })
+      client.emit("deletedTeam", { teamToDelete, members,projectId })
       setAllTeams(allTeams.filter(team => team._id !== teamId));
       setDropdownIndex(null)
     }
@@ -145,7 +145,7 @@ function Team() {
 
       setAllTeams(prev => prev.map(ele => selectedTeam ? { ...ele, team_members: res?.data } : ele))
       await createNotification(members, `You have been assigned to team "${teamToAdd.name}"`)
-      client.emit("assignedMembers", { newTeam, members })
+      client.emit("assignedMembers", { newTeam, members ,projectId })
       setSelectedUsers([]);
       setAllUsers([])
       setOriginalUsers([])
@@ -181,7 +181,7 @@ function Team() {
       // console.log(selectedTeam);
       const team = allTeams.find(t => t._id == selectedTeam)
       await createNotification(res?.data?.members, `You have been removed from Team "${team.name}"`)
-      client.emit("removedFromTeam", { teamId: selectedTeam, members: res?.data?.members })
+      client.emit("removedFromTeam", { teamId: selectedTeam, members: res?.data?.members,projectId })
       setRemoveMemberForm(false);
       setSelectedUsers([])
       setDropdownIndex(null);

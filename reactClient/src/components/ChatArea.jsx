@@ -17,14 +17,14 @@ function ChatArea({ selectedUser }) {
   const messagesEndRef = useRef(null);
   const userData = useSelector(state => state.auth.userData);
   const [confirmMakeCall, setConfirmMakeCall] = useState(false);
-  const {stream ,setStream} = useStream();
+  const { stream, setStream } = useStream();
 
   const getMediaPermission = async () => {
     try {
       const myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       console.log('Got Media Stream:', myStream);
-      setStream(myStream)   
-         
+      setStream(myStream)
+
       setConfirmMakeCall(true);
     } catch (err) {
       console.error('Error accessing media devices.', err);
@@ -45,6 +45,9 @@ function ChatArea({ selectedUser }) {
 
   useEffect(() => {
     if (!client) return;
+
+    client.emit("register", userData._id);
+
 
     const handleMessage = async (data) => {
 
@@ -121,8 +124,10 @@ function ChatArea({ selectedUser }) {
                     user: userData,
                     targetUserId: selectedUser._id,
                     callerId: userData._id,
-                    roomId: `call-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+                    roomId: `call-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                    projectId
                   });
+                  // navigate(`/videocall`)
                   setConfirmMakeCall(false);
                 }}
                 className="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-black text-lg font-medium"
@@ -187,8 +192,8 @@ function ChatArea({ selectedUser }) {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
-                    
-                    e.preventDefault(); 
+
+                    e.preventDefault();
                     handleSendMessage();
                   }
                 }}

@@ -65,7 +65,7 @@ function Task() {
         if (!client)
             return;
 
-        client.emit("register", userData._id);
+        client.emit("register", { userId: userData._id, projectId });
 
         client.on("recTask", (data) => {
             setAllTasks(prev => [...prev, data])
@@ -136,7 +136,7 @@ function Task() {
             const taskTomodify = allTasks.find(task => task._id === formTaskId)
             const modifiedTask = { ...taskTomodify, task: taskName, details: details, deadline: deadline }
             setAllTasks(allTasks.map(task => task._id === formTaskId ? { ...task, task: taskName, details: details, deadline: deadline } : task))
-            client.emit("modifyTask", { task: modifiedTask, members: modifiedTask.teamMemberIds })
+            client.emit("modifyTask", { task: modifiedTask, members: modifiedTask.teamMemberIds,projectId })
             setModifyForm(false);
             setTaskName('');
             setDetails('');
@@ -157,7 +157,7 @@ function Task() {
             setDropdownIndex(null)
             const taskTodelete = allTasks.find(task => task._id == taskId)
             await createNotification(taskTodelete.teamMemberIds, `Task "${taskTodelete?.task}" is deleted which was assigned to your team`)
-            client.emit("deletedTask", { taskId, members: taskTodelete.teamMemberIds || [] })
+            client.emit("deletedTask", { taskId, members: taskTodelete.teamMemberIds || [] , projectId })
             setNotification("Task deleted successfully")
             setAllTasks(allTasks.filter(task => task._id !== taskId))
             setTimeout(() => {
@@ -211,7 +211,7 @@ function Task() {
 
             const resp = await createNotification(members, `Task "${updatedTargetedTask?.task}" is assigned to your team "${updatedTargetedTask?.team?.name}"`)
 
-            client.emit("teamAssigned", { members, updatedTargetedTask })
+            client.emit("teamAssigned", { members, updatedTargetedTask ,projectId })
             setFormTaskID(null)
             setSelectedTeam(null)
 
@@ -234,7 +234,7 @@ function Task() {
             // console.log(taskTobeRemoved);
 
             await createNotification(members, `Your team "${taskTobeRemoved?.team?.name}" is removed from the task "${taskTobeRemoved?.task}" `)
-            client.emit("removeTeam", { taskId, members })
+            client.emit("removeTeam", { taskId, members ,projectId })
             setNotification("Team removed successfully")
             setTimeout(() => {
                 setNotification("")

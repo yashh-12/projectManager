@@ -48,10 +48,10 @@ const router = createBrowserRouter(
           <Route path='tasks' loader={taskLoader} element={<Task />} />
           <Route path='teams' loader={teamLoader} element={<Team />} />
           <Route path='chat' element={<Chat />} />
-          <Route path='videocall' element={<VideoCall />} />
         </Route>
 
       </Route>
+      <Route path='videocall' element={<VideoCall />} />
       <Route path='/profile' element={<ProfilePage />} />
       <Route path='/forgot-password' element={<ForgotPassword />} />
 
