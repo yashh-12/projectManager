@@ -338,7 +338,7 @@ const getAllUnassignedUsers = asyncHandler(async (req, res) => {
 
     const teamMemberIds = teamMembers.map(t => t.member);
 
-    const users = await User.find({ _id: { $nin: teamMemberIds } });
+    const users = await User.find({ _id: { $nin: teamMemberIds },isVerified : true });
 
     res.status(200).json(new apiResponse(200, users, "All unassigned users"));
 });

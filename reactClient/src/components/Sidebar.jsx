@@ -34,8 +34,8 @@ function Sidebar() {
         const res = await createProject(projectName, deadline);
         console.log(res);
 
-        if (res.success && res.data) {
-            setProjects(prev => [...prev, res.data]);
+        if (res?.success && res?.data) {
+            setProjects(prev => [...prev, res?.data]);
             console.log(res.data);
             setIsCreating(false);
             setProjectName('');

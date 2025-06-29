@@ -46,7 +46,7 @@ function ChatArea({ selectedUser }) {
   useEffect(() => {
     if (!client) return;
 
-    client.emit("register", userData._id);
+    client.emit("register", { userId: userData._id, projectId });
 
 
     const handleMessage = async (data) => {
@@ -127,7 +127,6 @@ function ChatArea({ selectedUser }) {
                     roomId: `call-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                     projectId
                   });
-                  // navigate(`/videocall`)
                   setConfirmMakeCall(false);
                 }}
                 className="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-black text-lg font-medium"

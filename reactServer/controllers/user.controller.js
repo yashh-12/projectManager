@@ -100,6 +100,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
   const { usernameOrEmail, password } = req.body;
+  
 
   if (!usernameOrEmail || !password)
     return res.status(400).json(new apiError(400, "Email and Password is required"));
@@ -110,13 +111,18 @@ const loginUser = asyncHandler(async (req, res) => {
 
   if (!user) res.status(400).json(new apiError(400, "User not found"));
 
+
   if (!user.isVerified)
     return res.status(400).json(new apiError(400, "Please verify your email"));
 
+
+
   const isMatch = await user.isCorrectPassword(password);
+
 
   if (!isMatch)
     return res.status(400).json(new apiError(400, "Invalid credentials"));
+
 
   const accessToken = await user.generateAccessToken();
   const refreshToken = await user.generateRefreshToken();

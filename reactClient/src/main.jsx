@@ -49,9 +49,8 @@ const router = createBrowserRouter(
           <Route path='teams' loader={teamLoader} element={<Team />} />
           <Route path='chat' element={<Chat />} />
         </Route>
-
       </Route>
-      <Route path='videocall' element={<VideoCall />} />
+      <Route path=':roomId/videocall' element={<VideoCall />} />
       <Route path='/profile' element={<ProfilePage />} />
       <Route path='/forgot-password' element={<ForgotPassword />} />
 

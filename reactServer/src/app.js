@@ -25,8 +25,6 @@ server.on("connection", (client) => {
 
   client.on("join-personalRoom", (roomId) => {
     client.join(roomId);
-    console.log("user joined room ");
-    
     client.to(roomId).emit("startHandshake", roomId);
   });
 
@@ -65,21 +63,17 @@ server.on("connection", (client) => {
   // });
 
   client.on("call-user", ({ user, targetUserId, callerId, roomId, projectId }) => {
-    const targetInfo = socketHashMap[targetUserId];
-    console.log("this ran ");
-    
+    const targetInfo = socketHashMap[targetUserId];   
     if (
       targetInfo &&
       targetInfo.projectId === projectId
     ) {
-      client.join(roomId);
-      console.log("call sent ");
-      
-      server.to(targetInfo.socketId).emit("incoming-call", { user, callerId, roomId });
+      client.join(roomId);      
+      server.to(targetInfo.socketId).emit("incoming-call", { user, callerId, roomId ,projectId });
     }
   });
 
-  client.on("sendOffer", ({ roomId, offer }) => {
+  client.on("sendOffer", ({ roomId, offer }) => {    
     client.to(roomId).emit("offer", { roomId, offer });
   });
 
