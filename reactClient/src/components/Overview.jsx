@@ -6,33 +6,33 @@ import {
 } from 'recharts';
 
 function Overview() {
-  const { stats, chartData } = useLoaderData().data;
+  const { stats, chartData } = useLoaderData()?.data;
 
-  console.log(useLoaderData().data);
+  console.log(useLoaderData()?.data);
   
   const cards = [
     {
       title: 'Total Projects',
-      value: stats.totalProjects,
+      value: stats?.totalProjects,
       bg: 'bg-blue-900/30',
       color: 'text-blue-400',
     },
     {
       title: 'Completed Projects',
-      value: stats.completedProjects,
+      value: stats?.completedProjects,
       bg: 'bg-green-900/30',
       color: 'text-green-400',
     },
     {
       title: 'In Progress',
-      value: stats.totalProjects - stats.completedProjects,
+      value: stats?.totalProjects - stats?.completedProjects,
       bg: 'bg-yellow-900/30',
       color: 'text-yellow-400',
     },
     {
       title: 'Avg Completion',
-      value: chartData.length
-        ? `${Math.round(chartData.reduce((a, b) => a + b.completion, 0) / chartData.length)}%`
+      value: chartData?.length
+        ? `${Math.round(chartData?.reduce((a, b) => a + b?.completion, 0) / chartData?.length)}%`
         : '0%',
       bg: 'bg-purple-900/30',
       color: 'text-purple-400',

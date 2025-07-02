@@ -65,7 +65,10 @@ function Layout() {
     navigate('/projects')
     dispatch(setLoaderFalse())
   }
-  
+   
+  if (authLoader || loader || navigating) {
+    return <Loader />;
+  }
   
   
   return (

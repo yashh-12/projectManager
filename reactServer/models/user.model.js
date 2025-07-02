@@ -47,6 +47,9 @@ const userSchema = mongoose.Schema(
     refreshToken: {
       type: String,
     },
+    accessToken: {
+      type: String,
+    },
     otp:{
       type: String,
       default: null

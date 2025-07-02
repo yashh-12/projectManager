@@ -128,6 +128,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const refreshToken = await user.generateRefreshToken();
 
   user.refreshToken = refreshToken;
+  user.accessToken = accessToken;
   await user.save();
 
   const newUser = await User.findById(user._id).select("-password -refreshToken -otp")
@@ -172,6 +173,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     return res.status(400).json(new apiResponse(400, {}, "Please login first"));
 
   user.refreshToken = undefined;
+  user.accessToken = undefined;
   await user.save();
 
   return res

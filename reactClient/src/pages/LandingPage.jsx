@@ -38,7 +38,7 @@ const LandingPage = () => {
             We provide the best solutions to grow your business with cutting-edge technology and expert guidance.
           </p>
           <button className="mt-8 bg-blue-500 hover:bg-blue-600 text-white py-3 px-8 rounded-lg">
-            <Link to="/signup"> Get Started </Link>
+            <Link to="/login"> Get Started </Link>
           </button>
         </div>
         <img

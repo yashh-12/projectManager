@@ -27,6 +27,10 @@ const refreshAccessToken = asyncHandler(async (req, res, next) => {
   };
   
   const accessToken = await user.generateAccessToken();
+  user.accessToken = accessToken;
+  await user.save();
+
+
   res.cookie("accessToken", accessToken, options);
   next();
 });
