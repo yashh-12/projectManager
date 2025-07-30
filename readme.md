@@ -38,9 +38,8 @@ This project is a **real-time team collaboration and task management system** th
 ##  Demo
 
 A demo video of the project is available:
-asset/Video_2025-07-28_23-59-35.mp4
-
-asset/Video_2025-07-29_01-04-38.mp4
+/asset/Video_2025-07-28_23-59-35.mp4
+/asset/Video_2025-07-29_01-04-38.mp4
 ---
 
 ##  Tech Stack
