@@ -1,6 +1,4 @@
-# 📌 Project Title
-
-*A short description of what your project does.*
+#  My Project Management Tool
 
 ---
 
