@@ -37,9 +37,11 @@ This project is a **real-time team collaboration and task management system** th
 
 ##  Demo
 
-A demo video of the project is available:
-/asset/Video_2025-07-28_23-59-35.mp4
-/asset/Video_2025-07-29_01-04-38.mp4
+<video src="https://res.cloudinary.com/dltixhtaw/video/upload/v1753884301/Video_2025-07-29_01-04-38_nmmoif.mp4" controls width="500"></video>
+
+<video src="https://res.cloudinary.com/dltixhtaw/video/upload/v1753884310/Video_2025-07-28_23-59-35_bkgord.mp4" controls width="500"></video>
+
+
 ---
 
 ##  Tech Stack
