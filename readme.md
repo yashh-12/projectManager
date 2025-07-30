@@ -83,7 +83,7 @@ This project is a **real-time team collaboration and task management system** th
 ##  Project Structure
 
 ```
-project-name/
+projectManager/
 │-- reactClient/
 │-- reactServer/
 ```
