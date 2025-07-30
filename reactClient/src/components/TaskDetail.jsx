@@ -25,11 +25,11 @@ function TaskDetail({ task, onClose }) {
         {/* Deadline & Details */}
         <div className="mb-8 space-y-4 text-[17px] leading-relaxed">
           <p>
-            <span className="font-semibold text-blue-400">📅 Deadline:</span>{' '}
+            <span className="font-semibold text-blue-400"> Deadline:</span>{' '}
             {new Date(task.deadline).toLocaleString()}
           </p>
           <p>
-            <span className="font-semibold text-blue-400">📝 Details:</span>{' '}
+            <span className="font-semibold text-blue-400"> Details:</span>{' '}
             {task.details}
           </p>
         </div>

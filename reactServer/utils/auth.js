@@ -4,9 +4,7 @@ import apiError from "./apiError.js";
 
 const authenticateUser = async (req, res, next) => {
   const token = req.cookies?.accessToken;
-  console.log(token);
   
-
   if (!token)
     return res.status(401).json(new apiError(401,"No access token"))
 
@@ -19,12 +17,9 @@ const authenticateUser = async (req, res, next) => {
 
   if (!user)
     return res.status(401).json(new apiError(401, "User not found"))
-
-  console.log("accessToken ",user.accessToken,"Token ",token , " ", user.accessToken == token);
   
-
-  if (user.accessToken != token)
-    return res.status(401).json(new apiError(401, "Invalid access token"))
+  // if (user.accessToken != token)
+  //   return res.status(401).json(new apiError(401, "Invalid access token"))
 
   req.user = user;
   next();

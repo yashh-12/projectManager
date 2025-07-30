@@ -111,7 +111,6 @@ const loginUser = asyncHandler(async (req, res) => {
 
   if (!user) res.status(400).json(new apiError(400, "User not found"));
 
-
   if (!user.isVerified)
     return res.status(400).json(new apiError(400, "Please verify your email"));
 

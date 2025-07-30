@@ -15,10 +15,11 @@ const refreshAccessToken = asyncHandler(async (req, res, next) => {
 
   const user = await User.findById(decodedToken?.id);
 
-  if (!user || !user.refreshToken === refreshToken) {
+  if (!user || !(user.refreshToken == refreshToken)) {
+    console.log("this rwan");
+    
     return next();
   }
-
   
   const options = {
     expires: new Date(Date.now() + 24 * 60 * 60 * 1000 ), 

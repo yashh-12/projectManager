@@ -8,7 +8,7 @@ import { dispatchAvatar, dispatchLogin } from '../store/authSlice';
 function ProfilePage() {
   const userDetails = useSelector((state) => state.auth.userData);
   const dispatch = useDispatch();
-  const [activeSection, setActiveSection] = useState('overall');
+  const [activeSection, setActiveSection] = useState('avatar');
   const [avatar, setAvatar] = useState(null);
   const [username, setUsername] = useState(userDetails?.username || '');
   const [name, setName] = useState(userDetails?.name || '');
@@ -50,7 +50,7 @@ function ProfilePage() {
       setCurrentPassword("")
       setNewPassword("")
     } else {
-      setError(res.message)
+      setError("Incorrect password")
     }
   };
 
@@ -60,12 +60,12 @@ function ProfilePage() {
       <Error error={error} setError={setError}/>
       <aside className="w-64 rounded-lg bg-gray-800 p-6 space-y-6">
         <h2 className="text-xl font-bold mb-6">Settings</h2>
-        <button
+        {/* <button
           className={`w-full text-left px-4 py-2 rounded-lg ${activeSection === 'overall' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
           onClick={() => setActiveSection('overall')}
         >
           Overall
-        </button>
+        </button> */}
         <button
           className={`w-full text-left px-4 py-2 rounded-lg ${activeSection === 'avatar' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
           onClick={() => setActiveSection('avatar')}

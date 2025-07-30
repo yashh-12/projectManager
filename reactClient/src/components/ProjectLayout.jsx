@@ -17,6 +17,8 @@ function ProjectLayout() {
   const [authLoader, setAuthLoader] = useState(true);
   const navigating = navigation.state == "loading"
 
+  console.log(useLoaderData());
+  
   
   const isAuthPage = [
     '/login',

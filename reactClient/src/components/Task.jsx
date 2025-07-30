@@ -300,7 +300,7 @@ function Task() {
                             onSubmit={handleAddTask}
                             className="bg-gray-900 p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-md space-y-5 border border-gray-700"
                         >
-                            <h2 className="text-2xl font-bold text-white text-center">📝 Add New Task</h2>
+                            <h2 className="text-2xl font-bold text-white text-center">Add New Task</h2>
 
                             <input
                                 type="text"
@@ -358,7 +358,7 @@ function Task() {
                             className="bg-[#1e1e2e] text-white p-6 rounded-2xl shadow-2xl w-full max-w-md space-y-5 border border-gray-700"
                         >
                             <h2 className="text-2xl font-bold border-b border-gray-600 pb-3 text-center">
-                                ✏️ Modify Task
+                                Modify Task
                             </h2>
 
                             <div>
@@ -425,7 +425,7 @@ function Task() {
                             className="bg-[#1e1e2e] p-8 rounded-2xl shadow-2xl w-full max-w-lg space-y-6 border border-gray-700 text-white"
                         >
                             <h2 className="text-2xl font-bold border-b border-gray-600 pb-3 text-center">
-                                👥 Assign Team to Task
+                                Assign Team to Task
                             </h2>
 
                             <div>
