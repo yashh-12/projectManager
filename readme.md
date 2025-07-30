@@ -37,8 +37,8 @@ This project is a **real-time team collaboration and task management system** th
 
 ##  Demo
 
-[![Watch Demo 1](assets/demo1-thumbnail.png)](https://res.cloudinary.com/dltixhtaw/video/upload/v1753884301/Video_2025-07-29_01-04-38_nmmoif.mp4)  
-[![Watch Demo 2](assets/demo2-thumbnail.png)](https://res.cloudinary.com/dltixhtaw/video/upload/v1753884310/Video_2025-07-28_23-59-35_bkgord.mp4)
+- [▶ Demo 1](https://res.cloudinary.com/dltixhtaw/video/upload/v1753884301/Video_2025-07-29_01-04-38_nmmoif.mp4)  
+- [▶ Demo 2](https://res.cloudinary.com/dltixhtaw/video/upload/v1753884310/Video_2025-07-28_23-59-35_bkgord.mp4)
 
 
 ---
